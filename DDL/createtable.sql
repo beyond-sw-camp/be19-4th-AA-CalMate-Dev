@@ -703,6 +703,27 @@ ALTER TABLE diary add CONSTRAINT `fk_member_to_diary_1` FOREIGN KEY (`member_id`
 
 
 
+ALTER TABLE post add CONSTRAINT fk_post_member FOREIGN KEY (member_id) REFERENCES member(id);
+ALTER TABLE post add CONSTRAINT fk_post_tag FOREIGN KEY (tag_id) REFERENCES tag(id);
+
+ALTER TABLE post_like add CONSTRAINT fk_postlike_post FOREIGN KEY (post_id) REFERENCES post(id);
+ALTER TABLE post_like add CONSTRAINT fk_postlike_member FOREIGN KEY (member_id) REFERENCES member(id);
+ALTER TABLE post_like add CONSTRAINT uq_post_like UNIQUE (post_id, member_id);
+
+ALTER TABLE post_comment add CONSTRAINT fk_comment_post FOREIGN KEY (post_id) REFERENCES post(id);
+ALTER TABLE post_comment add CONSTRAINT fk_comment_member FOREIGN KEY (member_id) REFERENCES member(id);
+ALTER TABLE post_comment add CONSTRAINT fk_comment_parent FOREIGN KEY (member_parent_comment_id) REFERENCES post_comment(id);
+
+ALTER TABLE comment_like add CONSTRAINT fk_cmtlike_comment FOREIGN KEY (post_comment_id) REFERENCES post_comment(id);
+ALTER TABLE comment_like add CONSTRAINT fk_cmtlike_member FOREIGN KEY (member_id) REFERENCES member(id);
+ALTER TABLE comment_like add CONSTRAINT uq_comment_like UNIQUE (post_comment_id, member_id);
+
+ALTER TABLE post_file add CONSTRAINT fk_postfile_post FOREIGN KEY (post_id) REFERENCES post(id);
+
+ALTER TABLE post_tag add CONSTRAINT fk_posttag_post FOREIGN KEY (post_id) REFERENCES post(id);
+
+
+
 
 INSERT INTO `diary` (`day`, `weight`, `mood`, `condition`, `memo`, `member_id`) VALUES
 ('2025-11-01', 70, '좋음', '컨디션 양호', '오늘은 아침 일찍 일어나서 산책을 다녀왔다. 공기가 차가웠지만 상쾌해서 하루를 기분 좋게 시작할 수 있었다. 점심에는 가벼운 샐러드를 먹고 오후에는 책을 읽으며 여유로운 시간을 보냈다.', 1),
