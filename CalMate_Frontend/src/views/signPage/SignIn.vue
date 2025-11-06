@@ -40,10 +40,16 @@
           <button type="button" class="link">비밀번호를 잊으셨나요?</button>
         </div>
 
+        
+          <RouterLink class="btn_primary" @click="onClick" to="/main/dashboard">
+            <img class="btn_icon" src="@/assets/images/login.png" alt="" />
+            <span>로그인</span>
+          </RouterLink>
+<!--           
         <button type="button" class="btn_primary">
           <img class="btn_icon" src="@/assets/images/login.png" alt="" />
           <span>로그인</span>
-        </button>
+        </button> -->
 
         <div class="divider"><span>또는</span></div>
 
@@ -55,6 +61,21 @@
     </div>
   </div>
 </template>
+
+<script setup>
+import { RouterLink } from 'vue-router';
+import { useUserStore } from '@/stores/user';
+
+const userStore = useUserStore();
+
+function onClick() {
+  console.log('안타니?');
+  userStore.logIn({ userName : '장영실', userEmail: 'jangyoungsil@gmail.com', profilePath :'',
+  authorities :['ROLE_MEMBER'],userId : 'jangyoungsil@gmail.com',nickname: '과학자'});
+}
+
+</script>
+
 
 <style scoped>
 * { box-sizing: border-box; }

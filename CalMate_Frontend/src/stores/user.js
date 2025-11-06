@@ -14,17 +14,17 @@ export const useUserStore = defineStore(
     const profile       = ref('');
     const token         = ref('');
     const isLoggedIn    = ref(false); 
-    const crewId        = ref(0);
+    const nickname      = ref('');
     
     // ----- Actions -----
-    function logIn({ userName, userEmail, profilePath, authorities,userId : uid, crewId : crew, }) {
+    function logIn({ userName, userEmail, profilePath, authorities,userId : uid, nickname :nick }) {
       name.value = userName
       email.value = userEmail
       profile.value = profilePath
       roles.value = authorities
-      userId.value = uid
-      crewId.value = crew;
-      isLoggedIn.value = true
+      userId.value = uid;
+      nickname.value = nick;
+      isLoggedIn.value = true;
     }
     
     function logOut() {
@@ -34,7 +34,7 @@ export const useUserStore = defineStore(
       roles.value = []
       token.value = ''
       userId.value = 0
-      crewId.value = 0;
+      nickname.value = '';
       isLoggedIn.value = false
     }
 
@@ -46,16 +46,12 @@ export const useUserStore = defineStore(
         profile.value = newProfile;
     }
 
-    function changeCrew(id) {
-        crewId.value = id;
-    }
-
     // ----- 반환 -----
     return {
       // 외부 노출용 readonly state
-      name, email, roles, profile, token, isLoggedIn, userId,crewId,
+      name, email, roles, profile, token, isLoggedIn, userId,nickname,
       // actions
-      logIn, logOut, changeProfile , setToken, changeCrew
+      logIn, logOut, changeProfile , setToken
     }
   },
   {
@@ -69,7 +65,8 @@ export const useUserStore = defineStore(
         'profile',
         'token',
         'isLoggedIn',
-        'userId'
+        'userId',
+        'nickname'
       ]
     }
   }

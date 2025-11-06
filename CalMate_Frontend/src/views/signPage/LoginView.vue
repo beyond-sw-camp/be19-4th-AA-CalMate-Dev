@@ -40,10 +40,16 @@
           <button type="button" class="link">비밀번호를 잊으셨나요?</button>
         </div>
 
-        <button type="button" class="btn_primary">
+        
+          <!-- <RouterLink class="menu-link" to="/main/dashboard">
+            <img class="btn_icon" src="@/assets/images/login.png" alt="" />
+            <span>로그인123</span>
+          </RouterLink> -->
+
+        <!-- <button type="button" class="btn_primary">
           <img class="btn_icon" src="@/assets/images/login.png" alt="" />
           <span>로그인</span>
-        </button>
+        </button> -->
 
         <div class="divider"><span>또는</span></div>
 
@@ -55,6 +61,11 @@
     </div>
   </div>
 </template>
+
+<script setup>
+import { RouterLink } from 'vue-router';
+
+</script>
 
 <style scoped>
 * { box-sizing: border-box; }
