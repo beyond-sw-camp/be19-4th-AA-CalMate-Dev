@@ -2,13 +2,13 @@ export default [
   {
     path: '/main',
     name: 'main',
-    component: () => import('@/views/layout/DefualtLayout.vue'),
+    component: () => import('@/views/layout/DefaultLayout.vue'),
     
     children: [
       {
         path: 'dashboard',
         name: 'main-dashboard', 
-        component: () => import('@/views/dashBoard/DashBoard.vue'), // lazy
+        component: () => import('@/views/defaultPage/DashBoard.vue'), // lazy
       }
     ],
   },

@@ -8,12 +8,12 @@ export default [
       {
         path: 'signIn',
         name: 'sign-logIn', // link(to) 사용시 경로가 아닌 name을 사용해서 맵핑가능 
-        component: () => import('@/views/sign/SignIn.vue'), // lazy
+        component: () => import('@/views/signPage/SignIn.vue'), // lazy
       },
       {
         path: 'signUp',
         name: 'sign-signUp',
-        component: () => import('@/views/sign/SignUp.vue'),
+        component: () => import('@/views/signPage/SignUp.vue'),
       },
     ],
   },

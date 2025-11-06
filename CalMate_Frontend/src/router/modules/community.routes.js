@@ -8,7 +8,7 @@ export default [
       {
         path: 'board',
         name: 'community-board', 
-        component: () => import('@/views/community/Community.vue'), // lazy
+        component: () => import('@/views/communityPage/Community.vue'), // lazy
       },
     ],
   },
