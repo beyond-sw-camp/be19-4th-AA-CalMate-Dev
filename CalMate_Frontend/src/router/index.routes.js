@@ -21,44 +21,44 @@ const routes = [
 //   { path: '/', redirect: '/main/diary' },
 // ];
 
-  {
-    path: '/main',
-    component: () => import('@/views/layout/DefaultLayout.vue'),
-    children: [
-      {
-        path: 'calender',
-        name: 'calender',
-        component: () => import('@/views/calender/Calender.vue'),
-      },
-    ],
-  },
-  { path: '/', redirect: '/main/calender' },
-];
-
-
 //   {
 //     path: '/main',
 //     component: () => import('@/views/layout/DefaultLayout.vue'),
 //     children: [
 //       {
-//         path: 'qna',
-//         name: 'qna-list',
-//         component: () => import('@/views/qna/QnaList.vue'),
+//         path: 'calender',
+//         name: 'calender',
+//         component: () => import('@/views/calender/Calender.vue'),
 //       },
-//       {
-//         path: 'qna/new',
-//         name: 'qna-new',
-//         component: () => import('@/views/qna/Qna.vue'),
-//       },
-//       {
-//         path: 'qna/:id',
-//         name: 'qna-detail',
-//         component: () => import('@/views/qna/QnaDetail.vue'),
-//       }
 //     ],
 //   },
-//   { path: '/', redirect: '/main/qna' },
+//   { path: '/', redirect: '/main/calender' },
 // ];
+
+
+  {
+    path: '/main',
+    component: () => import('@/views/layout/DefaultLayout.vue'),
+    children: [
+      {
+        path: 'qna',
+        name: 'qna-list',
+        component: () => import('@/views/qna/QnaList.vue'),
+      },
+      {
+        path: 'qna/new',
+        name: 'qna-new',
+        component: () => import('@/views/qna/Qna.vue'),
+      },
+      {
+        path: 'qna/:id',
+        name: 'qna-detail',
+        component: () => import('@/views/qna/QnaDetail.vue'),
+      }
+    ],
+  },
+  { path: '/', redirect: '/main/qna' },
+];
 
 const router = createRouter({
   history: createWebHistory(),
