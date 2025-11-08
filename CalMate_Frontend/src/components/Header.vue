@@ -46,8 +46,11 @@
           </RouterLink>
         </li>
 
-        <li class="menu-item">
-          <RouterLink class="menu-link" to="#">
+        <li
+          class="menu-item"
+          :class="{ active: isActive('/main/dietmanagement') }"
+        >
+          <RouterLink class="menu-link" to="/main/dietmanagement">
             <img :src="dietManagementIcon" alt="" class="menu-icon" />
             <span>식단 관리</span>
           </RouterLink>

@@ -45,7 +45,7 @@
 
 <script setup>
 import uploadIcon from '@/assets/images/exerciseRecords/upload.png'
-import deleteIcon from '@/assets/images/exerciseRecords/delete.png'
+import deleteIcon from '@/assets/images/delete.png'
 import exampleImage from '@/assets/images/exerciseRecords/exerciseexample.png'
 
 defineProps({
