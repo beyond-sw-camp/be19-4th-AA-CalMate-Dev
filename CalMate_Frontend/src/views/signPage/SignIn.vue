@@ -7,7 +7,7 @@
         <p class="brand_sub">당신만의 식단 메이커 CalMate에 오신 것을 환영합니다.</p>
       </div>
 
-      <form class="form">
+      <form class="form" @submit.prevent="signIn">
         <label class="field">
           <span class="field_label">이메일</span>
           <div class="field_ctrl">
@@ -18,6 +18,7 @@
               placeholder="CalMate@email.com"
               autocomplete="email"
               required
+              v-model= "email"
             />
           </div>
         </label>
@@ -32,6 +33,7 @@
               placeholder="••••••••"
               autocomplete="current-password"
               required
+              v-model="pwd"
             />
           </div>
         </label>
@@ -41,15 +43,10 @@
         </div>
 
         
-          <RouterLink class="btn_primary" @click="onClick" to="/main/dashboard">
+          <button class="btn_primary"  >
             <img class="btn_icon" src="@/assets/images/login.png" alt="" />
             <span>로그인</span>
-          </RouterLink>
-<!--           
-        <button type="button" class="btn_primary">
-          <img class="btn_icon" src="@/assets/images/login.png" alt="" />
-          <span>로그인</span>
-        </button> -->
+          </button>
 
         <div class="divider"><span>또는</span></div>
 
@@ -63,15 +60,61 @@
 </template>
 
 <script setup>
-import { RouterLink } from 'vue-router';
+import { useRouter,RouterLink  } from 'vue-router';
+import { ref, reactive } from 'vue';
 import { useUserStore } from '@/stores/user';
+import api from '@/lib/api';
 
 const userStore = useUserStore();
+const router = useRouter();
+const email = ref('jangyoungsil@gmail.com');
+const pwd = ref('pw1234!');
 
-function onClick() {
-  console.log('안타니?');
-  userStore.logIn({ userName : '장영실', userEmail: 'jangyoungsil@gmail.com', profilePath :'',
-  authorities :['ROLE_MEMBER'],userId : 'jangyoungsil@gmail.com',nickname: '과학자'});
+async function signIn() {
+  try{
+    const response = 
+      await api.post('/login',
+              {
+                  email: email.value,
+                  pwd: pwd.value
+              },
+              {
+                  headers: { 'Content-Type': 'application/json' }
+              });
+
+    console.log('response:\n',response);
+    console.log('data:\n',response.data);
+    
+    const { success, code, message, user, extra } = response.data;
+    
+    console.log('user:\n',user);
+    userStore.logIn(user);
+
+    
+    if(user.authorities.some(x => x === 'ROLE_ADMIN')){
+        router.push("/main/dashboard");
+    } else {
+        router.push("/main/dashboard");
+    }
+  }
+  catch ( error)
+  {
+      // 에러 처리
+      if (error.response) {
+          console.error('❌ 서버 오류 코드:', error.response.status);
+          console.error('❌ 오류 내용:', error.response.data);
+          const errorMessage = error.response.status >= 500 ? 
+          '서버 이상' : error.response.data.message;
+          openModal(errorMessage,'로그인 실패', true);
+          console.log('asdasd\n',errorMessage);
+      } else if (error.request) {
+          // 요청은 갔지만 응답이 없을 때 (네트워크 문제 등)
+          console.error('❌ 응답 없음:', error.request);
+      } else {
+          // 기타 오류
+          console.error('❌ 요청 설정 중 오류:', error.message);
+      }
+  }
 }
 
 </script>
