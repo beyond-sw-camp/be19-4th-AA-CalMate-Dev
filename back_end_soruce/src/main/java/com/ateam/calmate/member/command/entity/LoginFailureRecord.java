@@ -18,13 +18,13 @@ public class LoginFailureRecord {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "date", nullable = false)
+    @Column(name = "failure_datetime", nullable = false)
     private LocalDateTime date;
 
-    @Column(name = "ip")
+    @Column(name = "failure_ip")
     private String ip;
 
-    @Column(name = "reason", nullable = false, length = 2000)
+    @Column(name = "failure_reasone", nullable = false, length = 2000)
     private String reason;
 
     @Column(name = "member_id", nullable = false)

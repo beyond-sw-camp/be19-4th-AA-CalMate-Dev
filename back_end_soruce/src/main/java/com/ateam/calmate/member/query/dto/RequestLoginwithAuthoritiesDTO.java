@@ -15,7 +15,11 @@ public class RequestLoginwithAuthoritiesDTO {
     private String email;
     private String memberName;
     private String birth;
+    private String nickName;
+    private Integer bodyMetric;
     private Long memStsId;
+    private Double weight;
+    private Double height;
     private LocalDateTime loginLockUntil;
     private Integer loginFailCnt;
     private String pwd;

@@ -11,10 +11,14 @@
         <result property="email" column="email"/>
         <result property="memberName" column="name"/>
         <result property="memStsId" column="status"/>
+        <result property="nickName" column="nickname"/>
         <result property="birth" column="birth"/>
         <result property="loginLockUntil" column="login_lock_until"/>
         <result property="loginFailCnt" column="login_failure_count"/>
         <result property="pwd" column="pw"/>
+        <result property="bodyMetric" column="body_metric"/>
+        <result property="height" column="height"/>
+        <result property="weight" column="weight"/>
         <collection property="authorities" ofType="com.ateam.calmate.member.query.dto.Authority">
             <result property="memberId" column="member_id"/>
             <result property="authId" column="authories_id"/>
@@ -28,11 +32,15 @@
                a.id
              , a.email
              , a.name
+             , a.nickname
              , a.birth
              , a.status
              , a.pw
              , a.login_failure_count
              , a.login_lock_until
+             , a.height
+             , a.weight
+             , a.body_metric
              , b.member_id
              , b.authories_id
              , c.authurity

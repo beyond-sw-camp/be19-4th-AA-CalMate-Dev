@@ -122,7 +122,7 @@ public class MemberServiceImpl implements MemberService {
         //계정 권한
         List<GrantedAuthority> grantedAuthorities
                 = loginDTO.getAuthorities().stream()
-                .map(x -> new SimpleGrantedAuthority(x.getAuthDescribe()))
+                .map(x -> new SimpleGrantedAuthority(x.getAuthName()))
                 .collect(Collectors.toList());
 
         UserImpl userImpl =
