@@ -187,25 +187,10 @@ INSERT INTO upload_file (
 )
 VALUES
     ('image/jpeg', '/uploads/2025/11/01/profile1.jpg', '2025-11-01 10:15:23', 'ACTIVE', 'profile1.jpg', 'f1a2b3c4d5.jpg', 1, 10),
-    ('image/png', '/uploads/2025/11/01/profile2.png', '2025-11-01 11:42:10', 'ACTIVE', 'profile2.png', 'a2b3c4d5e6.png', 2, 11),
-    ('application/pdf', '/uploads/2025/11/01/doc1.pdf', '2025-11-01 13:21:55', 'INACTIVE', 'resume.pdf', 'x9y8z7w6v5.pdf', 3, 12),
-    ('image/jpeg', '/uploads/2025/11/02/mountain1.jpg', '2025-11-02 09:32:10', 'ACTIVE', 'mountain1.jpg', 'j1k2l3m4n5.jpg', 1, 13),
     ('image/png', '/uploads/2025/11/02/mountain2.png', '2025-11-02 14:12:59', 'ACTIVE', 'mountain2.png', 'k2l3m4n5o6.png', 4, 14),
     ('application/pdf', '/uploads/2025/11/02/report.pdf', '2025-11-02 16:44:03', 'INACTIVE', 'report.pdf', 'r5t6y7u8i9.pdf', 5, 15),
     ('image/jpeg', '/uploads/2025/11/03/avatar1.jpg', '2025-11-03 08:01:44', 'ACTIVE', 'avatar1.jpg', 'q1w2e3r4t5.jpg', 2, 16),
-    ('image/png', '/uploads/2025/11/03/avatar2.png', '2025-11-03 11:27:18', 'ACTIVE', 'avatar2.png', 'w2e3r4t5y6.png', 3, 17),
-    ('image/jpeg', '/uploads/2025/11/03/avatar3.jpg', '2025-11-03 12:48:30', 'INACTIVE', 'avatar3.jpg', 'e3r4t5y6u7.jpg', 4, 18),
-    ('image/jpeg', '/uploads/2025/11/04/photo1.jpg', '2025-11-04 09:50:10', 'ACTIVE', 'photo1.jpg', 'z1x2c3v4b5.jpg', 1, 19),
-    ('image/png', '/uploads/2025/11/04/photo2.png', '2025-11-04 10:33:55', 'ACTIVE', 'photo2.png', 'x2c3v4b5n6.png', 2, 20),
-    ('application/pdf', '/uploads/2025/11/04/manual.pdf', '2025-11-04 13:21:22', 'INACTIVE', 'manual.pdf', 'p9o8i7u6y5.pdf', 5, 21),
-    ('image/jpeg', '/uploads/2025/11/05/pic1.jpg', '2025-11-05 08:12:14', 'ACTIVE', 'pic1.jpg', 'a1s2d3f4g5.jpg', 1, 22),
-    ('image/jpeg', '/uploads/2025/11/05/pic2.jpg', '2025-11-05 09:33:41', 'ACTIVE', 'pic2.jpg', 's2d3f4g5h6.jpg', 2, 23),
-    ('image/png', '/uploads/2025/11/05/pic3.png', '2025-11-05 11:19:50', 'INACTIVE', 'pic3.png', 'd3f4g5h6j7.png', 3, 24),
-    ('image/jpeg', '/uploads/2025/11/06/user1.jpg', '2025-11-06 09:00:00', 'ACTIVE', 'user1.jpg', 'u1i2o3p4q5.jpg', 4, 25),
-    ('image/png', '/uploads/2025/11/06/user2.png', '2025-11-06 09:15:25', 'ACTIVE', 'user2.png', 'i2o3p4q5r6.png', 5, 26),
-    ('image/jpeg', '/uploads/2025/11/06/user3.jpg', '2025-11-06 10:42:38', 'ACTIVE', 'user3.jpg', 'o3p4q5r6s7.jpg', 2, 27),
-    ('application/pdf', '/uploads/2025/11/06/doc2.pdf', '2025-11-06 11:58:00', 'INACTIVE', 'document.pdf', 'r4s5t6y7u8.pdf', 3, 28),
-    ('image/jpeg', '/uploads/2025/11/06/banner.jpg', '2025-11-06 12:30:12', 'ACTIVE', 'banner.jpg', 'y6u7i8o9p0.jpg', 1, 29);
+    ('image/png', '/uploads/2025/11/03/avatar2.png', '2025-11-03 11:27:18', 'ACTIVE', 'avatar2.png', 'w2e3r4t5y6.png', 3, 17);
 
 
 
