@@ -5,7 +5,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "LoginFailureRecord")
+@Table(name = "login_failure_history")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -27,6 +27,6 @@ public class LoginFailureRecord {
     @Column(name = "reason", nullable = false, length = 2000)
     private String reason;
 
-    @Column(name = "cumId", nullable = false)
-    private Long cumId;
+    @Column(name = "member_id", nullable = false)
+    private Long memberId;
 }

@@ -1,7 +1,7 @@
 package com.ateam.calmate.security;
 
 import com.ateam.calmate.member.command.dto.UserImpl;
-import com.ateam.calmate.member.command.entity.ProfileOfMember;
+import com.ateam.calmate.member.command.entity.UploadFile;
 import com.ateam.calmate.member.command.repository.ProfileImageRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -42,7 +42,7 @@ public class JsonAuthSuccessHandler implements AuthenticationSuccessHandler {
         UserImpl user = (UserImpl) authentication.getPrincipal();
         Long id = user.getId();
         String userName = user.getMemberName();
-        ProfileOfMember profile = profileImageRepository.findByCumId(id);
+        UploadFile profile = profileImageRepository.findByMemberId(id);
         String profilePath = profile != null ? profile.getFilePath() : null;
         List<String> authorities = toAuthorityList(authentication.getAuthorities());
 
@@ -53,7 +53,7 @@ public class JsonAuthSuccessHandler implements AuthenticationSuccessHandler {
 
             String requestPath = scheme + "://" + serverName +  ":" + port;
 
-            int index = profilePath.indexOf("/img");
+            int index = profilePath.indexOf("/uploads");
             profilePath =  requestPath + profilePath.substring(index,profilePath.length());
         }
 

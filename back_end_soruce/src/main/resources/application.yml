@@ -5,9 +5,9 @@ spring:
     name: member-client
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://localhost:3306/cal_mate?&rewriteBatchedStatements=true
-    username: swcamp
-    password: swcamp
+    url: jdbc:mariadb://cal-mate.iptime.org:15161/cal_mate?&rewriteBatchedStatements=true
+    username: cal_mate
+    password: cal123123
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
