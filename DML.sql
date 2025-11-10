@@ -243,10 +243,10 @@ INSERT INTO report (title, contents, yn, date, report_image_url, member_id2, pos
                                                                                                                                       ('허위사실 신고', '허위 정보 유포', TRUE, NOW(), '/img/report5.png', 6, 15, NULL, NULL, 5, 5);
 
 -- 신고 파일 업로드
-INSERT INTO report_fileupload (report_id, name, type, `rename`, path, thumb_path, upload_order) VALUES
-                                                                                                    (1, 'report1.jpg', 'image/jpeg', 'report1_001.jpg', '/upload/report1.jpg', '/upload/thumb_report1.jpg', 1),
-                                                                                                    (2, 'report2.jpg', 'image/jpeg', 'report2_001.jpg', '/upload/report2.jpg', '/upload/thumb_report2.jpg', 1),
-                                                                                                    (3, 'report3.png', 'image/png', 'report3_001.png', '/upload/report3.png', '/upload/thumb_report3.png', 1);
+INSERT INTO report_fileupload (report_id, name, type, re_name, path, thumb_path, upload_order) VALUES
+                                                                                                   (1, 'report1.jpg', 'image/jpeg', 'report1_001.jpg', '/upload/report1.jpg', '/upload/thumb_report1.jpg', 1),
+                                                                                                   (2, 'report2.jpg', 'image/jpeg', 'report2_001.jpg', '/upload/report2.jpg', '/upload/thumb_report2.jpg', 1),
+                                                                                                   (3, 'report3.png', 'image/png', 'report3_001.png', '/upload/report3.png', '/upload/thumb_report3.png', 1);
 
 
 INSERT INTO ban (
@@ -559,26 +559,6 @@ INSERT INTO `calender` (`cal_day`, `badge_count`, `exercise_status`, `meal_statu
 
 
 
-/* 2) 가챠 리셋 정책 */
-INSERT INTO gacha_reset (id, name, use_point) VALUES
-                                                  (1, '1등 뽑히면 리셋', 100),
-                                                  (2, '모든 경품 소진 시 리셋', 150),
-                                                  (3, '기간 만료 시 리셋', 50);
-
-/* 3) 가챠 이벤트 */
-INSERT INTO gacha_event (id, start_at, point, end_at, status, created_at, event_id2) VALUES
-    (1, '2025-11-01 00:00:00', 10, '2025-11-30 23:59:59', 'ACTIVE', NOW(), 1);
-
-/* 4) 경품 */
-INSERT INTO gacha_prize (id, name, payload_json, prize_type, rank, created_at, quantity, gacha_event_id) VALUES
-                                                                                                             (1, '1등-1000포인트', JSON_OBJECT('point',1000), 'POINT', 1, NOW(), 1, 1),
-                                                                                                             (2, '2등-쿠폰A',      JSON_OBJECT('coupon','A-COUPON'), 'COUPON', 2, NOW(), 5, 1),
-                                                                                                             (3, '꽝',             JSON_OBJECT('result','nothing'), 'NOTHING', 3, NOW(), 999, 1);
-
-/* 5) 경품 재고 */
-INSERT INTO gacha_quantity (id, count) VALUES
-                                           (1, 1), (2, 5), (3, 999);
-
 /* 6) 빙고 보드 */
 INSERT INTO bingo_board (id, title, size, start_date, end_date, created_at, member_id) VALUES
     (1, '11월 건강 빙고', 5, '2025-11-01', '2025-11-30', NOW(), 1);
@@ -607,44 +587,147 @@ INSERT INTO bingo_fileupload
                                                                                            (1,'bingo_img1.png','image/png','20251105_1.png','/upload/bingo/',NOW(),1,1),
                                                                                            (2,'bingo_img2.png','image/png','20251105_2.png','/upload/bingo/',NOW(),2,1);
 
-/* 9) 가챠 보드 칸 (샘플 20칸: 1~10 OPENED, 11~20 COVERED) */
-INSERT INTO gacha_board_cell
-(id, status, opened_at, `rows`, `cols`, opened_count, created_at, updated_at, gacha_prize_id, gacha_event_id, member_id)
+INSERT INTO gacha_reset (name, policy_type, policy_json)
 VALUES
-    (1,'OPENED',NOW(),1,1,1,NOW(),NOW(),1,1,1),
-    (2,'OPENED',NOW(),1,2,1,NOW(),NOW(),2,1,1),
-    (3,'OPENED',NOW(),1,3,1,NOW(),NOW(),3,1,1),
-    (4,'OPENED',NOW(),1,4,1,NOW(),NOW(),1,1,1),
-    (5,'OPENED',NOW(),1,5,1,NOW(),NOW(),2,1,1),
-    (6,'OPENED',NOW(),1,6,1,NOW(),NOW(),3,1,1),
-    (7,'OPENED',NOW(),1,7,1,NOW(),NOW(),1,1,1),
-    (8,'OPENED',NOW(),1,8,1,NOW(),NOW(),2,1,1),
-    (9,'OPENED',NOW(),1,9,1,NOW(),NOW(),3,1,1),
-    (10,'OPENED',NOW(),1,10,1,NOW(),NOW(),1,1,1),
-    (11,'COVERED',NULL,2,1,0,NOW(),NULL,1,1,1),
-    (12,'COVERED',NULL,2,2,0,NOW(),NULL,2,1,1),
-    (13,'COVERED',NULL,2,3,0,NOW(),NULL,3,1,1),
-    (14,'COVERED',NULL,2,4,0,NOW(),NULL,1,1,1),
-    (15,'COVERED',NULL,2,5,0,NOW(),NULL,2,1,1),
-    (16,'COVERED',NULL,2,6,0,NOW(),NULL,3,1,1),
-    (17,'COVERED',NULL,2,7,0,NOW(),NULL,1,1,1),
-    (18,'COVERED',NULL,2,8,0,NOW(),NULL,2,1,1),
-    (19,'COVERED',NULL,2,9,0,NOW(),NULL,3,1,1),
-    (20,'COVERED',NULL,2,10,0,NOW(),NULL,1,1,1);
+    ('최고등급당첨시리셋', 'TOP_RANK', JSON_OBJECT('trigger', 'TOP_RANK', 'desc', '최고등급 당첨 시 보드 리셋'));
 
-/* 10) 뽑기 실행 로그 */
--- (gacha_draw_log 테이블이 없는 스크립트 버전이면 이 블록은 건너뛰세요)
-
-/* 11) 지급 로그 */
-INSERT INTO gacha_reward_grant (id, grant_status, granted_at, created_at, gacha_board_cell_id) VALUES
-                                                                                                   (1,'GRANTED',NOW(),NOW(),1),
-                                                                                                   (2,'QUEUED',NULL,NOW(),2);
-
-/* 12) 가챠 파일 (이벤트 참조) */
-INSERT INTO gacha_fileupload
-(id, extend_file_path_id, gacha_event_id, name, mime_type, re_name, url, create_at)
+INSERT INTO gacha_event (start_at, end_at, point, status, current_board_version, gacha_reset_id)
 VALUES
-    (3, 1, 1, 'event_banner.png', 'image/png', 'banner_20251105.png', '/upload/bingo/20251105_1.png', NOW());
+    ('2025-11-01 00:00:00', '2025-12-31 23:59:59', 100, 'ACTIVE', 1, 1);
+
+INSERT INTO gacha_prize (name, payload_json, prize_type, rank, gacha_event_id)
+VALUES
+    ('다이아몬드 상자', JSON_OBJECT('item_code', 'ITEM_DIAMOND_BOX', 'value', 1), 'ITEM', 1, 1),
+    ('골드 쿠폰', JSON_OBJECT('coupon_code', 'GOLD2025', 'discount', '20%'), 'COUPON', 2, 1),
+    ('1000 포인트', JSON_OBJECT('point', 1000), 'POINT', 3, 1),
+    ('100 포인트', JSON_OBJECT('point', 100), 'POINT', 4, 1),
+    ('꽝', JSON_OBJECT('message', '다음 기회에!'), 'NOTHING', 5, 1);
+
+INSERT INTO gacha_quantity (id, count)
+VALUES
+    (1, 5),   -- 다이아몬드 상자
+    (2, 20),  -- 골드 쿠폰
+    (3, 100), -- 1000 포인트
+    (4, 300), -- 100 포인트
+    (5, 9999); -- 꽝
+
+INSERT INTO gacha_board_seed (gacha_event_id, gacha_prize_id, count_per_board)
+VALUES
+    (1, 1, 1),
+    (1, 2, 4),
+    (1, 3, 10),
+    (1, 4, 25),
+    (1, 5, 60);
+
+INSERT INTO gacha_shared_board
+(gacha_event_id, board_version, `row`, `col`, gacha_prize_id, status)
+VALUES
+    (1, 1, 1, 1, 5, 'COVERED'),
+    (1, 1, 1, 2, 5, 'COVERED'),
+    (1, 1, 1, 3, 4, 'COVERED'),
+    (1, 1, 1, 4, 4, 'COVERED'),
+    (1, 1, 1, 5, 3, 'COVERED'),
+    (1, 1, 1, 6, 5, 'COVERED'),
+    (1, 1, 1, 7, 5, 'COVERED'),
+    (1, 1, 1, 8, 2, 'COVERED'),
+    (1, 1, 1, 9, 5, 'COVERED'),
+    (1, 1, 1, 10, 1, 'COVERED'),
+    (1, 1, 2, 1, 5, 'COVERED'),
+    (1, 1, 2, 2, 5, 'COVERED'),
+    (1, 1, 2, 3, 4, 'COVERED'),
+    (1, 1, 2, 4, 4, 'COVERED'),
+    (1, 1, 2, 5, 3, 'COVERED'),
+    (1, 1, 2, 6, 5, 'COVERED'),
+    (1, 1, 2, 7, 5, 'COVERED'),
+    (1, 1, 2, 8, 2, 'COVERED'),
+    (1, 1, 2, 9, 5, 'COVERED'),
+    (1, 1, 2, 10, 1, 'COVERED'),
+    (1, 1, 3, 1, 5, 'COVERED'),
+    (1, 1, 3, 2, 5, 'COVERED'),
+    (1, 1, 3, 3, 4, 'COVERED'),
+    (1, 1, 3, 4, 4, 'COVERED'),
+    (1, 1, 3, 5, 3, 'COVERED'),
+    (1, 1, 3, 6, 5, 'COVERED'),
+    (1, 1, 3, 7, 5, 'COVERED'),
+    (1, 1, 3, 8, 2, 'COVERED'),
+    (1, 1, 3, 9, 5, 'COVERED'),
+    (1, 1, 3, 10, 1, 'COVERED'),
+    (1, 1, 4, 1, 5, 'COVERED'),
+    (1, 1, 4, 2, 5, 'COVERED'),
+    (1, 1, 4, 3, 4, 'COVERED'),
+    (1, 1, 4, 4, 4, 'COVERED'),
+    (1, 1, 4, 5, 3, 'COVERED'),
+    (1, 1, 4, 6, 5, 'COVERED'),
+    (1, 1, 4, 7, 5, 'COVERED'),
+    (1, 1, 4, 8, 2, 'COVERED'),
+    (1, 1, 4, 9, 5, 'COVERED'),
+    (1, 1, 4, 10, 1, 'COVERED'),
+    (1, 1, 5, 1, 5, 'COVERED'),
+    (1, 1, 5, 2, 5, 'COVERED'),
+    (1, 1, 5, 3, 4, 'COVERED'),
+    (1, 1, 5, 4, 4, 'COVERED'),
+    (1, 1, 5, 5, 3, 'COVERED'),
+    (1, 1, 5, 6, 5, 'COVERED'),
+    (1, 1, 5, 7, 5, 'COVERED'),
+    (1, 1, 5, 8, 2, 'COVERED'),
+    (1, 1, 5, 9, 5, 'COVERED'),
+    (1, 1, 5, 10, 1, 'COVERED'),
+    (1, 1, 6, 1, 5, 'COVERED'),
+    (1, 1, 6, 2, 5, 'COVERED'),
+    (1, 1, 6, 3, 4, 'COVERED'),
+    (1, 1, 6, 4, 4, 'COVERED'),
+    (1, 1, 6, 5, 3, 'COVERED'),
+    (1, 1, 6, 6, 5, 'COVERED'),
+    (1, 1, 6, 7, 5, 'COVERED'),
+    (1, 1, 6, 8, 2, 'COVERED'),
+    (1, 1, 6, 9, 5, 'COVERED'),
+    (1, 1, 6, 10, 1, 'COVERED'),
+    (1, 1, 7, 1, 5, 'COVERED'),
+    (1, 1, 7, 2, 5, 'COVERED'),
+    (1, 1, 7, 3, 4, 'COVERED'),
+    (1, 1, 7, 4, 4, 'COVERED'),
+    (1, 1, 7, 5, 3, 'COVERED'),
+    (1, 1, 7, 6, 5, 'COVERED'),
+    (1, 1, 7, 7, 5, 'COVERED'),
+    (1, 1, 7, 8, 2, 'COVERED'),
+    (1, 1, 7, 9, 5, 'COVERED'),
+    (1, 1, 7, 10, 1, 'COVERED'),
+    (1, 1, 8, 1, 5, 'COVERED'),
+    (1, 1, 8, 2, 5, 'COVERED'),
+    (1, 1, 8, 3, 4, 'COVERED'),
+    (1, 1, 8, 4, 4, 'COVERED'),
+    (1, 1, 8, 5, 3, 'COVERED'),
+    (1, 1, 8, 6, 5, 'COVERED'),
+    (1, 1, 8, 7, 5, 'COVERED'),
+    (1, 1, 8, 8, 2, 'COVERED'),
+    (1, 1, 8, 9, 5, 'COVERED'),
+    (1, 1, 8, 10, 1, 'COVERED'),
+    (1, 1, 9, 1, 5, 'COVERED'),
+    (1, 1, 9, 2, 5, 'COVERED'),
+    (1, 1, 9, 3, 4, 'COVERED'),
+    (1, 1, 9, 4, 4, 'COVERED'),
+    (1, 1, 9, 5, 3, 'COVERED'),
+    (1, 1, 9, 6, 5, 'COVERED'),
+    (1, 1, 9, 7, 5, 'COVERED'),
+    (1, 1, 9, 8, 2, 'COVERED'),
+    (1, 1, 9, 9, 5, 'COVERED'),
+    (1, 1, 9, 10, 1, 'COVERED'),
+    (1, 1, 10, 1, 5, 'COVERED'),
+    (1, 1, 10, 2, 5, 'COVERED'),
+    (1, 1, 10, 3, 4, 'COVERED'),
+    (1, 1, 10, 4, 4, 'COVERED'),
+    (1, 1, 10, 5, 3, 'COVERED'),
+    (1, 1, 10, 6, 5, 'COVERED'),
+    (1, 1, 10, 7, 5, 'COVERED'),
+    (1, 1, 10, 8, 2, 'COVERED'),
+    (1, 1, 10, 9, 5, 'COVERED'),
+    (1, 1, 10, 10, 1, 'COVERED');
+
+-- 예: member_id=1 이 다이아몬드 상자를 뽑음
+# INSERT INTO gacha_draw_log (member_id, gacha_shared_board_id, board_version, gacha_prize_id)
+
+INSERT INTO gacha_reward_grant (gacha_shared_board_id, grant_status)
+VALUES (10, 'QUEUED');
 
 /* 14) 포인트 내역 */
 INSERT INTO point (point_id, point, distinction, member_id, diary_id, calender_id, gacha_event_id, bingo_board_id) VALUES
