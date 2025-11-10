@@ -458,6 +458,7 @@ CREATE TABLE `calendar` (
                             `exercise_status` TINYINT NOT NULL DEFAULT 0,
                             `meal_status` TINYINT NOT NULL DEFAULT 0,
                             `diary_status` TINYINT NOT NULL DEFAULT 0,
+                            `badge_yn` TINYINT(1) NOT NULL DEFAULT 0,
                             `member_id` BIGINT NOT NULL,
                             CONSTRAINT `pk_calendar` PRIMARY KEY (`id`),
                             CONSTRAINT `uq_calendar_member_day` UNIQUE (`member_id`, `cal_day`),
