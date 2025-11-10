@@ -46,8 +46,11 @@
           </RouterLink>
         </li>
 
-        <li class="menu-item">
-          <RouterLink class="menu-link" to="#">
+        <li
+          class="menu-item"
+          :class="{ active: isActive('/main/dietmanagement') }"
+        >
+          <RouterLink class="menu-link" to="/main/dietmanagement">
             <img :src="dietManagementIcon" alt="" class="menu-icon" />
             <span>식단 관리</span>
           </RouterLink>
@@ -57,7 +60,7 @@
           class="menu-item"
           :class="{ active: isActive('/main/exercise') }"
         >
-          <RouterLink class="menu-link" to="#">
+          <RouterLink class="menu-link" to="/main/exerciseRecords">
             <img :src="exerciseRecordsIcon" alt="" class="menu-icon" />
             <span>운동 기록</span>
           </RouterLink>
