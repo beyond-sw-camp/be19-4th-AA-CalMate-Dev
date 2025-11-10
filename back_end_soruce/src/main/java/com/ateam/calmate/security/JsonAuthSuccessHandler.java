@@ -1,7 +1,7 @@
 package com.ateam.calmate.security;
 
 import com.ateam.calmate.member.command.dto.UserImpl;
-import com.ateam.calmate.member.command.entity.ProfileOfMember;
+import com.ateam.calmate.member.command.entity.UploadFile;
 import com.ateam.calmate.member.command.repository.ProfileImageRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -42,8 +42,8 @@ public class JsonAuthSuccessHandler implements AuthenticationSuccessHandler {
         UserImpl user = (UserImpl) authentication.getPrincipal();
         Long id = user.getId();
         String userName = user.getMemberName();
-        ProfileOfMember profile = profileImageRepository.findByCumId(id);
-        String profilePath = profile != null ? profile.getFilePath() : null;
+        UploadFile profile = profileImageRepository.findByMemberId(id);
+        String profilePath = profile != null ? profile.getFilePath() +  profile.getOriginalFileName() : null;
         List<String> authorities = toAuthorityList(authentication.getAuthorities());
 
         if(profilePath != null){
@@ -76,7 +76,10 @@ public class JsonAuthSuccessHandler implements AuthenticationSuccessHandler {
                 .append(",\"user\":{")
                 .append("\"userId\":\"").append(escapeJson(id.toString())).append("\",")
                 .append("\"userName\":\"").append(escapeJson(userName)).append("\",")
-                .append("\"crewId\":\"").append(escapeJson(user.getCrewId().toString())).append("\",")
+                .append("\"nickname\":\"").append(escapeJson(user.getNickName())).append("\",")
+                .append("\"bodyMetric\":\"").append(escapeJson(user.getBodyMetric().toString())).append("\",")
+                .append("\"weight\":\"").append(escapeJson(user.getWeight().toString())).append("\",")
+                .append("\"height\":\"").append(escapeJson(user.getHeight().toString())).append("\",")
                 .append("\"userEmail\":\"").append(escapeJson(userEmail)).append("\",")
                 .append("\"profilePath\":\"").append(escapeJson(profilePath)).append("\",")
                 .append("\"authorities\":").append(toJsonArray(authorities))

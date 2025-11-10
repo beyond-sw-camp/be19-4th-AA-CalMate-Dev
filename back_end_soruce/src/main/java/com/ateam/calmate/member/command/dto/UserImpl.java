@@ -14,9 +14,13 @@ public class UserImpl extends User {
     private Long id;
     private String email;
     private String memberName;
+    private String nickName;
     private String birth;
+    private Integer bodyMetric;
     private Long memStsId;
     private Long crewId;
+    private Double height;
+    private Double weight;
     private Integer loginFailCnt;
     private LocalDateTime loginLockUntil;
 
@@ -33,5 +37,9 @@ public class UserImpl extends User {
         this.memStsId = user.getMemStsId();
         this.crewId = user.getCrewId() == null ? 0L : user.getCrewId();
         this.loginLockUntil = user.getLoginLockUntil();
+        this.weight = user.getWeight();
+        this.height = user.getHeight();
+        this.nickName = user.getNickName();
+        this.bodyMetric = user.getBodyMetric();
     }
 }

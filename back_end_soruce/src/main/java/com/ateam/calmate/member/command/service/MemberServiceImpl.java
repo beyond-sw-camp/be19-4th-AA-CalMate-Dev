@@ -3,6 +3,7 @@ package com.ateam.calmate.member.command.service;
 
 import com.ateam.calmate.member.command.dto.*;
 import com.ateam.calmate.member.command.entity.*;
+import com.ateam.calmate.member.command.entity.compositeKeys.MemberAuthorityPK;
 import com.ateam.calmate.member.command.repository.*;
 import com.ateam.calmate.member.query.dto.BlackListDTO;
 import com.ateam.calmate.member.command.dto.RequestLoginwithAuthoritiesDTO;
@@ -21,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -98,13 +98,13 @@ public class MemberServiceImpl implements MemberService {
         }
 
         //암호가 틀렸을 때
-        if (bCryptPasswordEncoder.matches(member.getMemPwd(), memberDTO.getMemPwd())) {
+        if (bCryptPasswordEncoder.matches(member.getPw(), memberDTO.getMemPwd())) {
             responseQuitDTO.setInvalidPwd(true);
             return responseQuitDTO;
         }
 
         member.setQuitDate(LocalDateTime.now());
-        member.setMemStsId(2L);
+        member.setId(2L);
         memberRepository.save(member);
 
         return responseQuitDTO;
@@ -122,7 +122,7 @@ public class MemberServiceImpl implements MemberService {
         //계정 권한
         List<GrantedAuthority> grantedAuthorities
                 = loginDTO.getAuthorities().stream()
-                .map(x -> new SimpleGrantedAuthority(x.getAuthDescribe()))
+                .map(x -> new SimpleGrantedAuthority(x.getAuthName()))
                 .collect(Collectors.toList());
 
         UserImpl userImpl =
@@ -152,14 +152,14 @@ public class MemberServiceImpl implements MemberService {
                 , member.getId()
         );
 
-        int failCount = member.getLoginFailCnt() == null
-                ? 1 : member.getLoginFailCnt() + 1;
+        int failCount = member.getLoginFailureCount() == null
+                ? 1 : member.getLoginFailureCount() + 1;
 
         //연속 오 입력이 6이 됐다는건 15분 지나고 또 틀렸기 때문 .
         // 1로 바꾸지 않으면 바로 접속 제한 걸려서 1부터 다시 카운트 시작
         failCount = failCount >= 6 ? 1 : failCount;
 
-        member.setLoginFailCnt(failCount);
+        member.setLoginFailureCount(failCount);
 
 
         if (failCount >= 5) {
@@ -174,7 +174,7 @@ public class MemberServiceImpl implements MemberService {
     @Override
     @Transactional
     public void updateCompleteLogin(RequsetloginHisotry loginHistory) {
-        LoginRecord loginRecord = new LoginRecord(
+        LoginHistory loginRecord = new LoginHistory(
                 null,
                 loginHistory.getDateTime(),
                 loginHistory.getClientIp(),
@@ -183,8 +183,8 @@ public class MemberServiceImpl implements MemberService {
         );
 
         Member member = memberRepository.findById(loginHistory.getCumId()).orElse(null);
-        member.setLoginFailCnt(0);
-        member.setLastLogin(loginRecord.getDate());
+        member.setLoginFailureCount(0);
+//        member.setLastLogin(loginRecord.getDate());
         memberRepository.save(member);
         loginRecordRepository.save(loginRecord);
     }
@@ -197,7 +197,7 @@ public class MemberServiceImpl implements MemberService {
         Member member = optionalMember.get();
 
         if (dto.getMemStsId() != null) {
-            member.setMemStsId(dto.getMemStsId());
+            member.setId(dto.getMemStsId());
         }
         if (dto.getBanCnt() != null) {
             member.setBanCnt(dto.getBanCnt());
@@ -214,14 +214,14 @@ public class MemberServiceImpl implements MemberService {
         try {
             responseProfileImageDTO = profileImageService.updateProfileImage(singleFile, id , request);
 
-            ProfileOfMember findProfile = profileImageRepository.findByCumId(id);
+            UploadFile findProfile = profileImageRepository.findByMemberId(id);
 
             //파일이 없었을때
             if(findProfile == null){
-                findProfile = modelMapper.map(responseProfileImageDTO, ProfileOfMember.class);
+                findProfile = modelMapper.map(responseProfileImageDTO, UploadFile.class);
             } else { // 기존 파일이있어서 덮어 쓰기
                 findProfile.setFilePath(responseProfileImageDTO.getFilePath());
-                findProfile.setDirPath(responseProfileImageDTO.getDirPath());
+                findProfile.setFilePath(responseProfileImageDTO.getDirPath());
             }
             profileImageRepository.save(findProfile);
 
@@ -244,7 +244,7 @@ public class MemberServiceImpl implements MemberService {
     public boolean checkPassowrd(CheckPasswordDTO checkPasswordDTO) {
         /* 설명. DB에 있는 해당 회원의 정보 */
         Member member =  memberRepository.findById(checkPasswordDTO.getId()).orElse(null);
-        if(member == null || !passwordEncoder.matches(checkPasswordDTO.getPassword(), member.getMemPwd())){
+        if(member == null || !passwordEncoder.matches(checkPasswordDTO.getPassword(), member.getPw())){
             return false;
         }
 
@@ -255,13 +255,13 @@ public class MemberServiceImpl implements MemberService {
     public boolean modifyPassword(ModifyPasswordDTO modifyPasswordDTO) {
         Member member =  memberRepository.findById(modifyPasswordDTO.getId()).orElse(null);
 
-        if(member == null || !passwordEncoder.matches(modifyPasswordDTO.getOldPassword(), member.getMemPwd())){
+        if(member == null || !passwordEncoder.matches(modifyPasswordDTO.getOldPassword(), member.getPw())){
             return false;
         }
         // BCrypt 암호화
         modifyPasswordDTO.setNewPassword(bCryptPasswordEncoder.encode(modifyPasswordDTO.getNewPassword()));
 
-        member.setMemPwd(modifyPasswordDTO.getNewPassword());
+        member.setPw(modifyPasswordDTO.getNewPassword());
         memberRepository.save(member);
 
         return true;
@@ -274,7 +274,7 @@ public class MemberServiceImpl implements MemberService {
         ResponseSignUpDTO responseSignUpDTO = new ResponseSignUpDTO();
         // 중복된 email 혹은 이미 가입된 회원이 있는지조회(이미 가입된 회원 조건은 이름 && 생일이 같은 사람이있는지로 판단)
         Member findMember
-                = memberRepository.findByEmailOrMemNameAndBirth(memberDTO.getEmail(), memberDTO.getMemName(), memberDTO.getBirth());
+                = memberRepository.findByEmailOrNameAndBirth(memberDTO.getEmail(), memberDTO.getName(), memberDTO.getBirth());
 
         List<AuthorityList> authorityList
                 = authorityRepository.findAll().stream()
@@ -305,14 +305,14 @@ public class MemberServiceImpl implements MemberService {
         } else {
             try {
                 Member member = modelMapper.map(memberDTO, Member.class);
-                member.setMemStsId(1L); //회원 상태 정상 상태로 초기 셋팅
-                member.setMemRankId(1L); //회원 상태 정상 상태로 초기 셋팅
-                member.setSignInDate(LocalDate.now());
+                member.setStatus(1L); //회원 상태 정상 상태로 초기 셋팅
+                member.setLevel(1L); //회원 상태 정상 상태로 초기 셋팅
+                member.setCreatedAt(LocalDateTime.now());
                 member = memberRepository.save(member);
                 responseSignUpDTO.setMemberDTO(modelMapper.map(member, ResponseMemberDTO.class));
 
                 //기본 Member 권한 부여
-                memberAuthorityRepository.save(new MemberAuthority(null, member.getId(), authorityList.get(0).getId()));
+                memberAuthorityRepository.save(new MemberAuthority(new MemberAuthorityPK(member.getId(), authorityList.get(1).getId())));
             } catch (Exception e) {
                 throw new IllegalArgumentException("Member not Exception");
             }

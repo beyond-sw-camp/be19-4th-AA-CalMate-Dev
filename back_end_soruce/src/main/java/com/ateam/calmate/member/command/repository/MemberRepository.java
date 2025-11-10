@@ -4,8 +4,9 @@ import com.ateam.calmate.member.command.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
 
-    Member findByEmailOrMemNameAndBirth(String email, String memName, LocalDate birth);
+    Member findByEmailOrNameAndBirth(String email, String memName, LocalDate birth);
 }

@@ -5,28 +5,28 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "LoginRecord")
+@Table(name = "login_history")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class LoginRecord {
+public class LoginHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "date", nullable = false)
+    @Column(name = "login_date", nullable = false)
     private LocalDateTime date;
 
-    @Column(name = "ip")
+    @Column(name = "come_in_ip")
     private String ip;
 
-    @Column(name = "preAddr", nullable = false)
+    @Column(name = "before_path", nullable = false)
     private String preAddr;
 
-    @Column(name = "cumId", nullable = false)
-    private Long cumId;
+    @Column(name = "member_id", nullable = false)
+    private Long memberId;
 }
