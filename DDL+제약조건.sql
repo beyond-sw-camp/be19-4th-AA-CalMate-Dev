@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS member (
                                       height   DECIMAL(5,2)   NOT NULL DEFAULT 0,
                                       weight   DECIMAL(5,2)   NOT NULL DEFAULT 0,
                                       body_metric   INT   NULL   COMMENT '회원 가입 할때 defualt로 계산 값 입력',
-                                      point   INT   NULL,
+                                      point   INT   NULL default 0,
                                       created_at   DATETIME   NOT NULL default now(),
                                       login_failure_count   int   NULL default 0,
                                       login_lock_until   datetime   NULL   COMMENT '연속5회 비밀번호 오류시 15분 접속 제한',
@@ -607,10 +607,10 @@ CREATE TABLE `point` (
                          `point` INT NULL,
                          `distinction` ENUM('EARN','USE') NULL COMMENT '1: 획득(EARN), 2: 사용(USE)',
                          `member_id` BIGINT NOT NULL,
-                         `diary_id` INT NOT NULL,
-                         `calender_id` BIGINT NOT NULL,
-                         `gacha_event_id` BIGINT NOT NULL,
-                         `bingo_board_id` INT NOT NULL,
+                         `diary_id` INT  NULL,
+                         `calender_id` BIGINT  NULL,
+                         `gacha_event_id` BIGINT  NULL,
+                         `bingo_board_id` INT  NULL,
                          CONSTRAINT pk_point_point_id PRIMARY KEY (`point_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=UTF8MB4;
 
