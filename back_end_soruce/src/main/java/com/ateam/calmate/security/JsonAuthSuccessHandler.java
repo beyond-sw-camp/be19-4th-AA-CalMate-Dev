@@ -3,8 +3,10 @@ package com.ateam.calmate.security;
 import com.ateam.calmate.common.ResponseMessage;
 import com.ateam.calmate.member.command.dto.ResoponseLoginDTO;
 import com.ateam.calmate.member.command.dto.UserImpl;
+import com.ateam.calmate.member.command.entity.Member;
 import com.ateam.calmate.member.command.entity.UploadFile;
 import com.ateam.calmate.member.command.repository.ProfileImageRepository;
+import com.ateam.calmate.member.command.service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,10 +27,14 @@ import java.util.stream.Collectors;
 @Component
 public class JsonAuthSuccessHandler implements AuthenticationSuccessHandler {
     private final ProfileImageRepository profileImageRepository;
+    private final MemberService memberService;
 
     @Autowired
-    public JsonAuthSuccessHandler(ProfileImageRepository profileImageRepository){
+    public JsonAuthSuccessHandler(
+            ProfileImageRepository profileImageRepository
+            ,MemberService memberService){
         this.profileImageRepository = profileImageRepository;
+        this.memberService = memberService;
     }
 
     @Override
@@ -90,6 +96,7 @@ public class JsonAuthSuccessHandler implements AuthenticationSuccessHandler {
         ObjectMapper objectMapper = new ObjectMapper();
         String json = objectMapper.writeValueAsString(responseMessage);
         res.getWriter().write(json);
+
     }
 
     private List<String> toAuthorityList(Collection<? extends GrantedAuthority> authorities) {
