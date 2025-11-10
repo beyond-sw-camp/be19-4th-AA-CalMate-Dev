@@ -14,18 +14,30 @@ export const useUserStore = defineStore(
     const profile       = ref('');
     const token         = ref('');
     const isLoggedIn    = ref(false); 
-    const crewId        = ref(0);
+    const nickname      = ref('');
+    const weight        = ref(0.0);
+    const height        = ref(0.0);
+    const bodyMetric    = ref(0);
     
     // ----- Actions -----
-    function logIn({ userName, userEmail, profilePath, authorities,userId : uid, crewId : crew, }) {
+    function logIn(
+      { userName, userEmail, profilePath, authorities, userId : uid, nickname :nick ,
+       weight : in_weight, height : in_height, bodyMetric : body_metric
+      }
+  ) {
+      // console.log('asd',in_weight)
       name.value = userName
       email.value = userEmail
       profile.value = profilePath
       roles.value = authorities
-      userId.value = uid
-      crewId.value = crew;
-      isLoggedIn.value = true
+      userId.value = uid;
+      nickname.value = nick;
+      isLoggedIn.value = true;
+      weight.value = in_weight;
+      height.value = in_height;
+      bodyMetric.value = body_metric;
     }
+
     
     function logOut() {
       name.value = ''
@@ -34,8 +46,11 @@ export const useUserStore = defineStore(
       roles.value = []
       token.value = ''
       userId.value = 0
-      crewId.value = 0;
+      nickname.value = '';
       isLoggedIn.value = false
+      weight.value = 0;
+      height.value = 0;
+      bodyMetric.value = 0;
     }
 
     function setToken(jwtToken) {
@@ -46,16 +61,13 @@ export const useUserStore = defineStore(
         profile.value = newProfile;
     }
 
-    function changeCrew(id) {
-        crewId.value = id;
-    }
-
     // ----- 반환 -----
     return {
       // 외부 노출용 readonly state
-      name, email, roles, profile, token, isLoggedIn, userId,crewId,
+      name, email, roles, profile, token, isLoggedIn, userId,nickname,
+      weight, height, bodyMetric,
       // actions
-      logIn, logOut, changeProfile , setToken, changeCrew
+      logIn, logOut, changeProfile , setToken
     }
   },
   {
@@ -67,9 +79,13 @@ export const useUserStore = defineStore(
         'email',
         'roles',
         'profile',
+        'bodyMetric',
         'token',
         'isLoggedIn',
-        'userId'
+        'userId',
+        'nickname',
+        'weight',
+        'height'
       ]
     }
   }
