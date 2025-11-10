@@ -611,6 +611,7 @@ CREATE TABLE `point` (
                          `calender_id` BIGINT  NULL,
                          `gacha_event_id` BIGINT  NULL,
                          `bingo_board_id` INT  NULL,
+                         histoy_time datetime not null default now(),
                          CONSTRAINT pk_point_point_id PRIMARY KEY (`point_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=UTF8MB4;
 
