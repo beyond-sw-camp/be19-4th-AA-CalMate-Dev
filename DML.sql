@@ -757,3 +757,10 @@ INSERT INTO food_allergy (meal_id, allergy_id) VALUES
                                                    (1, 1), -- 1번 식사: '땅콩' 포함
                                                    (2, 2), -- 2번 식사: '우유' 포함
                                                    (3, 3); -- 3번 식사: '갑각류' 포함
+
+
+
+insert into base_of_point
+(description, point )
+values ('일별 로그인 흭득 포인트', 10),
+('회원가입 흭득 포인트', 1000);

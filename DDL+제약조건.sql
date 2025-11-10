@@ -55,6 +55,8 @@ DROP TABLE IF EXISTS member_allergy;
 DROP TABLE IF EXISTS allergy;
 DROP TABLE IF EXISTS food_allergy;
 
+DROP TABLE IF EXISTS base_of_point;
+
 
 -- ------------- DDL -------------- --
 CREATE TABLE IF NOT EXISTS upload_file (
@@ -632,6 +634,15 @@ CREATE TABLE IF NOT EXISTS food_allergy (
                                             allergy_id	BIGINT	NOT NULL,
                                             PRIMARY KEY (id)
     ) ENGINE=INNODB;
+
+    
+create TABLE IF NOT EXISTS table base_of_point(
+	id int not null auto_increment,
+	description varchar(2000),
+	point int not null,
+	constraint pk_base_of_point_id primary key(id)
+)
+
 
 -- ----- 제약조건 ----------
 -- ✅ 외래키 검사 다시 활성화
