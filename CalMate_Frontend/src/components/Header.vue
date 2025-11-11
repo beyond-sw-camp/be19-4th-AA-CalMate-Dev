@@ -86,9 +86,9 @@
 
         <li
           class="menu-item"
-          :class="{ active: isActive('/community/board') }"
+          :class="{ active: isActive('/community') }"
         >
-          <RouterLink class="menu-link" to="/community/board">
+          <RouterLink class="menu-link" to="/community">
             <img :src="communityIcon" alt="" class="menu-icon" />
             <span>커뮤니티</span>
           </RouterLink>
