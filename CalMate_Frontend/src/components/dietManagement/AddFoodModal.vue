@@ -11,28 +11,53 @@
       <div class="modal-body">
         <div class="field">
           <label>음식 이름</label>
-          <input v-model="form.name" type="text" class="field-input" placeholder="음식 이름을 입력해주세요" />
+          <input
+            v-model="form.name"
+            type="text"
+            class="field-input"
+            placeholder="음식 이름을 입력해주세요"
+          />
         </div>
 
         <div class="field-row">
           <div class="field">
             <label>칼로리 (kcal)</label>
-            <input v-model="form.kcal" type="text" class="field-input" placeholder="예: 300" />
+            <input
+              v-model="form.kcal"
+              type="text"
+              class="field-input"
+              placeholder="예: 300"
+            />
           </div>
           <div class="field">
             <label>P (단백질, g)</label>
-            <input v-model="form.protein" type="text" class="field-input" placeholder="예: 5.6" />
+            <input
+              v-model="form.protein"
+              type="text"
+              class="field-input"
+              placeholder="예: 5.6"
+            />
           </div>
         </div>
 
         <div class="field-row">
           <div class="field">
             <label>C (탄수화물, g)</label>
-            <input v-model="form.carb" type="text" class="field-input" placeholder="예: 66" />
+            <input
+              v-model="form.carb"
+              type="text"
+              class="field-input"
+              placeholder="예: 66"
+            />
           </div>
           <div class="field">
             <label>F (지방, g)</label>
-            <input v-model="form.fat" type="text" class="field-input" placeholder="예: 0.5" />
+            <input
+              v-model="form.fat"
+              type="text"
+              class="field-input"
+              placeholder="예: 0.5"
+            />
           </div>
         </div>
 
@@ -43,11 +68,19 @@
           </div>
 
           <div class="image-box">
-            <div v-if="!form.previews.length" class="placeholder">
+            <!-- 여기만 변경: form.previews 존재 여부 먼저 체크 -->
+            <div
+              v-if="!(form.previews && form.previews.length)"
+              class="placeholder"
+            >
               아직 이미지가 없습니다.
             </div>
             <div v-else class="preview-grid">
-              <div v-for="(src, i) in form.previews" :key="i" class="preview">
+              <div
+                v-for="(src, i) in form.previews"
+                :key="i"
+                class="preview"
+              >
                 <img :src="src" />
                 <button class="delete" @click.stop="removePreview(i)">
                   <img :src="closeIcon" alt="close" class="delete-icon" />
@@ -63,7 +96,14 @@
         </div>
       </div>
 
-      <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="onFileChange" />
+      <input
+        ref="fileInput"
+        type="file"
+        accept="image/*"
+        multiple
+        class="hidden"
+        @change="onFileChange"
+      />
     </div>
   </div>
 </template>
@@ -72,17 +112,107 @@
 import { reactive, ref } from 'vue'
 import closeIcon from '@/assets/images/close.png'
 
+const props = defineProps({
+  foodData: {
+    type: Object,
+    default: null
+  }
+})
+
 const emit = defineEmits(['close', 'save'])
 const fileInput = ref(null)
-const form = reactive({ name: '', kcal: '', protein: '', carb: '', fat: '', previews: [] })
+
+// 기존 이미지: [{ id, url }, ...]
+const originalImages = ref(
+  props.foodData && Array.isArray(props.foodData.images)
+    ? props.foodData.images.map(img => ({ ...img }))
+    : []
+)
+
+// 처음에는 기존 이미지 id 전부 유지
+const keepFileIds = ref(originalImages.value.map(img => img.id))
+
+const form = reactive({
+  name: props.foodData?.name || '',
+  kcal:
+    props.foodData && (props.foodData.kcal || props.foodData.kcal === 0)
+      ? String(props.foodData.kcal)
+      : '',
+  protein:
+    props.foodData && (props.foodData.protein || props.foodData.protein === 0)
+      ? String(props.foodData.protein)
+      : '',
+  carb:
+    props.foodData && (props.foodData.carb || props.foodData.carb === 0)
+      ? String(props.foodData.carb)
+      : '',
+  fat:
+    props.foodData && (props.foodData.fat || props.foodData.fat === 0)
+      ? String(props.foodData.fat)
+      : '',
+  // 항상 배열이 되도록 초기화
+  previews: originalImages.value.map(img => img.url),
+  files: []
+})
+
+const imagesTouched = ref(false)
 
 const onClose = () => emit('close')
+
 const openFileDialog = () => fileInput.value?.click()
-const onFileChange = e => Array.from(e.target.files).forEach(f => form.previews.push(URL.createObjectURL(f)))
-const removePreview = i => form.previews.splice(i, 1)
+
+const onFileChange = e => {
+  const files = Array.from(e.target.files || [])
+  if (!files.length) return
+
+  imagesTouched.value = true
+
+  files.forEach(f => {
+    form.files.push(f)
+    form.previews.push(URL.createObjectURL(f))
+  })
+
+  e.target.value = ''
+}
+
+const removePreview = i => {
+  imagesTouched.value = true
+
+  // 화면에서 제거
+  form.previews.splice(i, 1)
+
+  const originalCount = originalImages.value.length
+
+  if (i < originalCount) {
+    // 기존 이미지 삭제 → 유지 목록에서 해당 id 제거
+    originalImages.value.splice(i, 1)
+    keepFileIds.value = originalImages.value.map(img => img.id)
+  } else {
+    // 새로 추가한 파일 삭제
+    const fileIndex = i - originalCount
+    if (fileIndex >= 0 && fileIndex < form.files.length) {
+      form.files.splice(fileIndex, 1)
+    }
+  }
+}
+
 const onSubmit = () => {
-  if (!form.name || !form.kcal) return alert('이름과 칼로리를 입력해주세요.')
-  emit('save', { ...form })
+  if (!form.name || !form.kcal) {
+    alert('이름과 칼로리를 입력해주세요.')
+    return
+  }
+
+  emit('save', {
+    name: form.name,
+    kcal: form.kcal,
+    protein: form.protein,
+    carb: form.carb,
+    fat: form.fat,
+    previews: form.previews,
+    files: form.files,
+    imagesTouched: imagesTouched.value,
+    keepFileIds: keepFileIds.value
+  })
   emit('close')
 }
 </script>
@@ -123,7 +253,6 @@ const onSubmit = () => {
   height: 20px;
   display: block;
 }
-
 .field {
   display: flex;
   flex-direction: column;
