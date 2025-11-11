@@ -47,9 +47,8 @@
 
             f.id            AS file_id,
             f.name          AS file_name,
-            -- 🔽 여기 두 줄이 핵심 수정
-            CONCAT(COALESCE(p.url_path, ''), f.re_name) AS file_url,
-            CONCAT(COALESCE(p.url_path, ''), f.path, '/', COALESCE(f.thumb_path, '')) AS thumb_url,
+            CONCAT(COALESCE(p.url_path, ''), f.path, '/', f.re_name) AS file_url,
+            CONCAT(COALESCE(p.url_path, ''), f.thumb_path)          AS thumb_url,
             f.upload_order  AS upload_order
         FROM meal m
             LEFT JOIN meal_food mf
