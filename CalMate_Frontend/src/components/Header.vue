@@ -46,8 +46,11 @@
           </RouterLink>
         </li>
 
-        <li class="menu-item">
-          <RouterLink class="menu-link" to="#">
+        <li
+          class="menu-item"
+          :class="{ active: isActive('/main/dietmanagement') }"
+        >
+          <RouterLink class="menu-link" to="/main/dietmanagement">
             <img :src="dietManagementIcon" alt="" class="menu-icon" />
             <span>식단 관리</span>
           </RouterLink>
@@ -57,21 +60,25 @@
           class="menu-item"
           :class="{ active: isActive('/main/exercise') }"
         >
-          <RouterLink class="menu-link" to="#">
+          <RouterLink class="menu-link" to="/main/exerciseRecords">
             <img :src="exerciseRecordsIcon" alt="" class="menu-icon" />
             <span>운동 기록</span>
           </RouterLink>
         </li>
 
-        <li class="menu-item">
-          <RouterLink class="menu-link" to="#">
+        <li class="menu-item"
+        :class="{ active: isActive('/main/diary') }"
+        >
+          <a class="menu-link" href="#" @click.prevent="goDiary">
             <img :src="diaryIcon" alt="" class="menu-icon" />
             <span>일기</span>
-          </RouterLink>
+          </a>
         </li>
 
-        <li class="menu-item">
-          <RouterLink class="menu-link" to="#">
+        <li class="menu-item"
+        :class="{ active: isActive('/main/calendar') }"
+        >
+          <RouterLink class="menu-link" to="/main/calendar">
             <img :src="calendarIcon" alt="" class="menu-icon" />
             <span>캘린더</span>
           </RouterLink>
@@ -79,16 +86,18 @@
 
         <li
           class="menu-item"
-          :class="{ active: isActive('/community/board') }"
+          :class="{ active: isActive('/community') }"
         >
-          <RouterLink class="menu-link" to="/community/board">
+          <RouterLink class="menu-link" to="/community">
             <img :src="communityIcon" alt="" class="menu-icon" />
             <span>커뮤니티</span>
           </RouterLink>
         </li>
 
-        <li class="menu-item">
-          <RouterLink class="menu-link" to="#">
+        <li class="menu-item"
+            :class="{ active: isActive('/main/point') }"
+        >
+          <RouterLink class="menu-link" to="/main/point">
             <img :src="pointIcon" alt="" class="menu-icon" />
             <span>포인트</span>
           </RouterLink>
@@ -142,6 +151,7 @@ import communityIcon from '../assets/images/header/community.png'
 import pointIcon from '../assets/images/header/point.png'
 import profileIcon from '../assets/images/header/profile.png'
 import logoutIcon from '../assets/images/header/logout.png'
+import MenuExtention from './MenuExtention.vue'
 import ModalLogoutConfirm from '@/components/ModalLogoutConfirm.vue'
 
 const userStore = useUserStore()
@@ -159,6 +169,19 @@ async function handleLogout() {
   userStore.logOut();
   // console.log('로그아웃 실행!')
   await router.push('/sign/signIn')
+}
+
+function goDiary(){
+  const today = new Date()
+  const key = today.toISOString().split('T')[0]
+  let entries = []
+  try { entries = JSON.parse(localStorage.getItem('journalEntries') || '[]') } catch { entries = [] }
+  const exists = Array.isArray(entries) && entries.some(e => e?.date === key)
+  if (exists) {
+    router.push({ name: 'main-diary-done', query: { date: key } })
+  } else {
+    router.push({ name: 'main-diary', query: { date: key } })
+  }
 }
 
 </script>

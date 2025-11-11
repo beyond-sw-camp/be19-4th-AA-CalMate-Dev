@@ -1,4 +1,4 @@
-import { fileURLToPath, URL } from 'node:url'
+﻿import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -18,15 +18,16 @@ export default defineConfig({
   // server: {
   //   proxy: {
   //     '/api': {
-  //       target: 'http://localhost:8055', // 스프링 백엔드
+  //       target: 'http://localhost:8055', // ?ㅽ봽留?諛깆뿏??
   //       changeOrigin: true,
   //       rewrite: p => p.replace(/^\/api/, ''),
   //     },
   //     '/act': {
-  //       target: 'http://localhost:8055', // (옵션) actuator(관리포트) 프록시
+  //       target: 'http://localhost:8055', // (?듭뀡) actuator(愿由ы룷?? ?꾨줉??
   //       changeOrigin: true,
   //       rewrite: p => p.replace(/^\/act/, ''),
   //     }
   //   }
   // }
 })
+
