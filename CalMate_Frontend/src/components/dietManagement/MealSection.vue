@@ -33,13 +33,13 @@
           F: {{ food.fat }}g
         </p>
 
-        <div class="food-images">
+        <div v-if="food.images && food.images.length" class="food-images">
           <div
-            v-for="(src, idx) in food.images"
-            :key="idx"
+            v-for="(img, idx) in food.images"
+            :key="img.id ?? idx"
             class="food-image-wrap"
           >
-            <img :src="src" alt="food" />
+            <img :src="img.url" alt="food" />
           </div>
         </div>
       </div>
@@ -47,7 +47,6 @@
 
     <AddFoodModal
       v-if="showModal"
-      :visible="showModal"
       :food-data="editingFood"
       @close="closeModal"
       @save="handleSaveFood"
@@ -56,34 +55,114 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AddFoodModal from './AddFoodModal.vue'
 import deleteIcon from '@/assets/images/delete.png'
 import editIcon from '@/assets/images/edit.png'
-import foodexample from '@/assets/images/dietManagement/foodexample.png'
 import { dietStore } from '@/stores/dietStore'
+import { useUserStore } from '@/stores/user'
+import { createDiet, getDietByType, updateDiet, deleteDiet } from '@/api/diet'
+import api from '@/lib/api'
 
 const props = defineProps({
-  label: String
+  label: String,
 })
 
 const mealKeyMap = {
   아침: 'breakfast',
   점심: 'lunch',
   저녁: 'dinner',
-  간식: 'snack'
+  간식: 'snack',
+}
+
+const dietTypeMap = {
+  아침: 'BREAKFAST',
+  점심: 'LUNCH',
+  저녁: 'DINNER',
+  간식: 'SNACK',
 }
 
 const mealKey = mealKeyMap[props.label] || null
+const dietType = dietTypeMap[props.label] || null
 
 const showModal = ref(false)
 const editingFood = ref(null)
 const foods = ref([])
 
+const userStore = useUserStore()
+const memberId = computed(() => userStore.userId)
+
+// 백엔드 baseURL (예: http://localhost:8081)
+const apiBaseURL = (api.defaults.baseURL || '').replace(/\/$/, '')
+
+// fileUrl → 최종 img src 로 변환
+const resolveFileUrl = fileUrl => {
+  if (!fileUrl) return ''
+  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+    return fileUrl
+  }
+  let path = fileUrl
+  if (!path.startsWith('/')) {
+    path = '/' + path
+  }
+  if (!apiBaseURL) {
+    return path
+  }
+  return apiBaseURL + path
+}
+
+const currentDate = computed(() => {
+  return new Date().toISOString().slice(0, 10)
+})
+
 const recalcTotal = () => {
   const total = foods.value.reduce((sum, f) => sum + Number(f.kcal || 0), 0)
   if (mealKey) {
     dietStore.meals[mealKey] = total
+  }
+}
+
+const loadFoods = async () => {
+  if (!dietType || !memberId.value) return
+  try {
+    const res = await getDietByType({
+      date: currentDate.value,
+      type: dietType,
+      memberId: memberId.value,
+    })
+
+    const data = res.data
+    const meals = Array.isArray(data) ? data : data ? [data] : []
+
+    foods.value = meals
+      .filter(meal => !!meal.food)
+      .map(meal => {
+        const food = meal.food
+        const files = meal.files || []
+
+        const images = files
+          .filter(f => f.fileUrl)
+          .map(f => ({
+            id: f.fileId,
+            url: resolveFileUrl(f.fileUrl),
+          }))
+
+        return {
+          id: meal.mealId,
+          name: food.name,
+          kcal: food.kcal,
+          protein: food.protein,
+          carb: food.carbo,
+          fat: food.fat,
+          images,
+        }
+      })
+
+    recalcTotal()
+  } catch (e) {
+    console.error('식단 조회 실패', e)
+    foods.value = []
+    recalcTotal()
   }
 }
 
@@ -93,7 +172,10 @@ const openAddModal = () => {
 }
 
 const openEditModal = food => {
-  editingFood.value = { ...food }
+  editingFood.value = {
+    ...food,
+    images: food.images ? food.images.map(img => ({ ...img })) : [],
+  }
   showModal.value = true
 }
 
@@ -102,39 +184,64 @@ const closeModal = () => {
   editingFood.value = null
 }
 
-const handleSaveFood = food => {
-  if (editingFood.value) {
-    foods.value = foods.value.map(f =>
-      f.id === editingFood.value.id
-        ? {
-            ...f,
-            ...food,
-            images: food.previews?.length ? food.previews : f.images
-          }
-        : f
-    )
-  } else {
-    foods.value.push({
-      id: Date.now() + Math.random(),
+const handleSaveFood = async food => {
+  try {
+    if (!dietType || !memberId.value) return
+
+    const bodyFood = {
       name: food.name,
-      kcal: food.kcal,
-      protein: food.protein,
-      carb: food.carb,
-      fat: food.fat,
-      images:
-        food.previews && food.previews.length
-          ? food.previews
-          : [foodexample]
-    })
+      gram: 0,
+      kcal: Number(food.kcal),
+      carbo: Number(food.carb),
+      protein: Number(food.protein),
+      fat: Number(food.fat),
+      sodium: 0,
+    }
+
+    if (editingFood.value && editingFood.value.id) {
+      const filesToSend = food.imagesTouched ? food.files || [] : null
+      const keepFileIdsToSend = food.imagesTouched ? food.keepFileIds || [] : null
+
+      await updateDiet({
+        id: editingFood.value.id,
+        date: currentDate.value,
+        type: dietType,
+        memberId: memberId.value,
+        food: bodyFood,
+        files: filesToSend,
+        keepFileIds: keepFileIdsToSend,
+      })
+    } else {
+      await createDiet({
+        date: currentDate.value,
+        type: dietType,
+        memberId: memberId.value,
+        food: bodyFood,
+        files: food.files || [],
+      })
+    }
+
+    await loadFoods()
+  } catch (e) {
+    console.error('식단 저장/수정 실패', e)
+  } finally {
+    closeModal()
   }
-  recalcTotal()
-  closeModal()
 }
 
-const removeFood = id => {
-  foods.value = foods.value.filter(f => f.id !== id)
-  recalcTotal()
+const removeFood = async id => {
+  try {
+    await deleteDiet(id)
+    foods.value = foods.value.filter(f => f.id !== id)
+    recalcTotal()
+  } catch (e) {
+    console.error('식단 삭제 실패', e)
+  }
 }
+
+onMounted(() => {
+  loadFoods()
+})
 </script>
 
 <style scoped>

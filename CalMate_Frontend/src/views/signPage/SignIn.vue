@@ -94,7 +94,7 @@ async function signIn() {
 
     
     if(result.user.authorities.some(x => x === 'ROLE_ADMIN')){
-        router.push("/main/dashboard");
+        router.push("/admin/main-dashboard");
     } else {
         router.push("/main/dashboard");
     }

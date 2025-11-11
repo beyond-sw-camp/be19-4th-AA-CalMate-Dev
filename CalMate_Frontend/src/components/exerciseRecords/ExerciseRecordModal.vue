@@ -3,8 +3,8 @@
     <div class="modal">
       <div class="modal-header">
         <div>
-          <h3>운동 기록하기</h3>
-          <p class="sub">오늘의 운동을 기록하세요</p>
+          <h3>운동 {{ isEdit ? '수정하기' : '기록하기' }}</h3>
+          <p class="sub">오늘의 운동을 {{ isEdit ? '수정' : '기록' }}하세요</p>
         </div>
         <button class="close-btn" @click="onClose">
           <img :src="closeIcon" alt="close" class="close-icon" />
@@ -51,18 +51,37 @@
           </div>
 
           <div class="image-box">
-            <div v-if="!form.previews.length" class="placeholder-wrap">
+            <div
+              v-if="!form.existingPreviews.length && !form.previews.length"
+              class="placeholder-wrap"
+            >
               <span class="placeholder-text">
                 아직 이미지가 추가되지 않았습니다.
               </span>
             </div>
+
             <div v-else class="preview-grid">
               <div
-                v-for="(src, idx) in form.previews"
-                :key="idx"
+                v-for="(item, idx) in form.existingPreviews"
+                :key="'ex-' + (item.id ?? idx)"
                 class="preview-item"
               >
-                <img :src="src" alt="이미지 미리보기" />
+                <img :src="item.url" alt="기존 이미지" />
+                <button
+                  type="button"
+                  class="delete-badge"
+                  @click.stop="removeExisting(idx)"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div
+                v-for="(item, idx) in form.previews"
+                :key="'new-' + idx"
+                class="preview-item"
+              >
+                <img :src="item.url" alt="새 이미지" />
                 <button
                   type="button"
                   class="delete-badge"
@@ -78,7 +97,7 @@
 
       <div class="modal-footer">
         <button class="submit-btn" type="button" @click="onSubmit">
-          기록하기
+          {{ isEdit ? '수정하기' : '기록하기' }}
         </button>
       </div>
     </div>
@@ -95,13 +114,21 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import closeIcon from '@/assets/images/close.png'
 
 const props = defineProps({
-  visible: { type: Boolean, default: false }
+  visible: { type: Boolean, default: false },
+  mode: { type: String, default: 'create' },
+  initialData: {
+    type: Object,
+    default: () => null,
+  },
 })
+
 const emit = defineEmits(['close', 'save'])
+
+const isEdit = computed(() => props.mode === 'edit')
 
 const fileInput = ref(null)
 
@@ -109,15 +136,59 @@ const form = reactive({
   type: '',
   minutes: '',
   kcal: '',
-  previews: []
+  files: [],
+  previews: [],
+  existingPreviews: [],
 })
+
+const clearObjectUrls = () => {
+  form.previews.forEach((p) => {
+    if (p.isObjectUrl) {
+      URL.revokeObjectURL(p.url)
+    }
+  })
+}
 
 const resetForm = () => {
   form.type = ''
   form.minutes = ''
   form.kcal = ''
+  clearObjectUrls()
+  form.files = []
   form.previews = []
+  form.existingPreviews = []
 }
+
+const fillFormFromInitial = () => {
+  if (!props.initialData) return
+  form.type = props.initialData.type ?? ''
+  form.minutes =
+    props.initialData.minutes != null ? String(props.initialData.minutes) : ''
+  form.kcal =
+    props.initialData.kcal != null ? String(props.initialData.kcal) : ''
+  clearObjectUrls()
+  form.files = []
+  form.previews = []
+  form.existingPreviews = (props.initialData.files || []).map((f) => ({
+    id: f.fileId ?? f.id,
+    url: f.url,
+  }))
+}
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible) {
+      if (isEdit.value && props.initialData) {
+        fillFormFromInitial()
+      } else {
+        resetForm()
+      }
+    } else {
+      resetForm()
+    }
+  },
+)
 
 const onClose = () => emit('close')
 
@@ -125,22 +196,33 @@ const openFileDialog = () => {
   fileInput.value?.click()
 }
 
-const addFilesToPreviews = files => {
-  Array.from(files).forEach(file => {
+const addFilesToPreviews = (files) => {
+  Array.from(files).forEach((file) => {
     const url = URL.createObjectURL(file)
-    form.previews.push(url)
+    form.previews.push({ url, file, isObjectUrl: true })
+    form.files.push(file)
   })
 }
 
-const onFileChange = e => {
+const onFileChange = (e) => {
   const files = e.target.files
   if (files?.length) addFilesToPreviews(files)
 }
 
-const removePreview = idx => {
-  const url = form.previews[idx]
-  if (url) URL.revokeObjectURL(url)
+const removePreview = (idx) => {
+  const item = form.previews[idx]
+  if (!item) return
+  if (item.isObjectUrl) {
+    URL.revokeObjectURL(item.url)
+  }
   form.previews.splice(idx, 1)
+  form.files.splice(idx, 1)
+}
+
+const removeExisting = (idx) => {
+  const item = form.existingPreviews[idx]
+  if (!item) return
+  form.existingPreviews.splice(idx, 1)
 }
 
 const onSubmit = () => {
@@ -153,9 +235,9 @@ const onSubmit = () => {
     type: form.type,
     minutes: Number(form.minutes) || 0,
     kcal: Number(form.kcal) || 0,
-    imageUrls: form.previews
+    files: form.files,
+    keepFileIds: form.existingPreviews.map((p) => p.id),
   })
-  resetForm()
 }
 </script>
 
@@ -255,9 +337,7 @@ const onSubmit = () => {
   overflow: hidden;
   display: flex;
   align-items: stretch;
-  cursor: default;
   user-select: none;
-  pointer-events: none;
 }
 .placeholder-wrap {
   flex: 1;
@@ -282,7 +362,6 @@ const onSubmit = () => {
   border-radius: 10px;
   overflow: hidden;
   background-color: #e5e7eb;
-  pointer-events: all;
 }
 .preview-item img {
   width: 100%;

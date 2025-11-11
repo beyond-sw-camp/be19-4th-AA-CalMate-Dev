@@ -42,11 +42,31 @@
 
 <script setup>
 import { useRoute } from 'vue-router'
-import { computed } from 'vue'
+import { computed, watchEffect } from 'vue'
 import { dietStore } from '@/stores/dietStore'
 
 const route = useRoute()
 const totalKcal = computed(() => dietStore.total)
+
+// Persist daily intake total for Calendar integration
+const STORE_KEY = 'dietTotalsByDate'
+const todayKey = () => {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+const loadMap = () => {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}') } catch { return {} }
+}
+const saveMap = (map) => localStorage.setItem(STORE_KEY, JSON.stringify(map))
+
+watchEffect(() => {
+  const map = loadMap()
+  map[todayKey()] = { totalKcal: Number(totalKcal.value) || 0 }
+  saveMap(map)
+})
 </script>
 
 <style scoped>
