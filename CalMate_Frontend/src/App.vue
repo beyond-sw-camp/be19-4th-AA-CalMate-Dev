@@ -23,6 +23,8 @@ onMounted(async () => {
     console.debug('Health check disabled (VITE_ENABLE_HEALTH_CHECK!=true)')
   }
 
+
+  console.log('테스트:::::', sessionStorage.getItem('device_fp'));
   console.log('이름:', userStore.name)
   console.log('로그인 상태:', userStore.isLoggedIn)
 })

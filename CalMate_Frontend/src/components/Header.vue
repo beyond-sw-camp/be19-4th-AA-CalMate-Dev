@@ -166,8 +166,8 @@ const isActive = (path) => route.path.startsWith(path)
 
 async function handleLogout() {
   // await api.post('/auth/logout')
+  sessionStorage.removeItem('device_fp');
   userStore.logOut();
-  // console.log('로그아웃 실행!')
   await router.push('/sign/signIn')
 }
 

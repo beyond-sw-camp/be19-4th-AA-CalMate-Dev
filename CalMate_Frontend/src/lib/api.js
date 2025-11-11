@@ -24,7 +24,8 @@ const api = axios.create({
 // ------------------------------------------------------------
 api.interceptors.request.use((config) => {
   // 매 요청마다 Pinia 스토어에서 최신 토큰을 읽는다. (앱이 createPinia() 된 뒤라면 안전)
-  const user = useUserStore();              // 현재 활성화된 Pinia 인스턴스에서 user 스토어를 가져온다.
+  // const user = useUserStore();              // 현재 활성화된 Pinia 인스턴스에서 user 스토어를 가져온다.
+const user = useUserStore();   
   const token = user.token;                 // 스토어가 들고 있는 액세스 토큰 문자열을 읽는다.
 
   // 토큰이 존재하면 Authorization 헤더를 표준 Bearer 스킴으로 세팅한다.
@@ -53,11 +54,12 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config;          // 실패한 "원 요청"의 설정 객체를 참조한다.
     const status = error?.response?.status; // HTTP 상태 코드(401 등)를 꺼낸다.
-
+// console.log("인터셉터타나?::");
     // 401(Unauthorized)이고, 아직 이 요청에 대해 재시도 마크를 안 달았으면 처리한다.
-    if (status === 401 && original && !original._retry) {
+    if ((status === 401 || status === 403) && original && !original._retry) {
       original._retry = true;               // 무한 루프를 막기 위한 커스텀 플래그 (_retry)
 
+          console.log('newAccessToken::::::123123:::');
       // 만약 지금 리프레시가 진행 중이 아니라면, 우리가 리프레시를 시작한다.
       if (!isRefreshing) {
         isRefreshing = true;                // 이제부터 리프레시 중 상태
@@ -66,20 +68,22 @@ api.interceptors.response.use(
           // /auth/refresh 엔드포인트로 POST 요청을 보낸다.
           // - withCredentials: true → HttpOnly 쿠키(리프레시 토큰)를 자동으로 동봉
           // - X-Device-Fp: 선택 헤더 (서버에서 UA/디바이스 바인딩 검증 시 사용 가능)
-          const refreshRes = await axios.post(
-            '/api/auth/refresh',
+          const refreshRes = await api.post(
+            '/member/refresh',
             {},                              // 보통 바디는 비우고, 쿠키로 식별한다.
             {
               withCredentials: true,         // ✅ 리프레시 쿠키를 자동 전송하도록 한다.
-              headers: { 'X-Device-Fp': navigator.userAgent }, // (선택) 간단한 디바이스 지문 힌트
+              headers: { 'X-Device-Fp': sessionStorage.getItem('device_fp') }, // (선택) 간단한 디바이스 지문 힌트
             }
           );
 
           // 서버가 새 액세스 토큰을 JSON 바디로 내려준다고 가정한다.
           const newAccessToken = refreshRes.data.accessToken;
+          console.log('newAccessToken:::::::::',newAccessToken);
 
           // Pinia 스토어에 새 토큰을 반영한다. (이후 요청부터는 요청 인터셉터가 자동으로 새 토큰을 실어준다)
-          const user = useUserStore();       // 스토어 인스턴스 획득
+          // const user = useUserStore();       // 스토어 인스턴스 획득
+const user = useUserStore();   
           user.setToken(newAccessToken);     // 액세스 토큰 갱신
 
           // 리프레시가 끝났으므로, 대기 중이던 원 요청들을 재개한다.
@@ -92,7 +96,8 @@ api.interceptors.response.use(
           // - 사용자를 로그아웃시키고,
           // - 로그인 화면으로 보내는 등의 처리가 필요하다.
           waitQueue = [];                    // 큐를 비운다.
-          const user = useUserStore();       // 스토어 접근
+const user = useUserStore();   
+          // const user = useUserStore();       // 스토어 접근
           user.logOut();                     // 모든 사용자 상태/토큰 초기화
           // 여기에서 라우터로 /login 이동 등을 수행하는 것을 권장한다.
           return Promise.reject(e);          // 상위로 에러를 그대로 전달한다.
