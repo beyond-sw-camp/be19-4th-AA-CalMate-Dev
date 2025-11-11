@@ -94,8 +94,10 @@
           </RouterLink>
         </li>
 
-        <li class="menu-item">
-          <RouterLink class="menu-link" to="#">
+        <li class="menu-item"
+            :class="{ active: isActive('/main/point') }"
+        >
+          <RouterLink class="menu-link" to="/main/point">
             <img :src="pointIcon" alt="" class="menu-icon" />
             <span>포인트</span>
           </RouterLink>

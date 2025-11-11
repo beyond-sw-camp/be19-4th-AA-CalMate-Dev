@@ -66,6 +66,11 @@ export default [
           },
         ],
       },
+      {
+        path: 'point',
+        name: 'main-point', 
+        component: () => import('@/views/defaultPage/Points.vue'), 
+      },
     ],
   },
 ]
