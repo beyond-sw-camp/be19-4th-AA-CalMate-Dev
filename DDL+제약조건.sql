@@ -75,14 +75,10 @@ CREATE TABLE IF NOT EXISTS upload_file (
 
 CREATE TABLE IF NOT EXISTS goal (
                                     id   bigint   NOT NULL auto_increment,
-                                    type   ENUM('WEIGHT','CALORIE','MACRO') NOT NULL,
-                                    target_value   DECIMAL(10,2)   NULL,
-                                    kcal_per_day   INT   NULL,
-                                    protein_g   INT   NULL,
-                                    fat_g   INT   NULL,
-                                    carbs_g   INT   NULL,
+                                    goal_type   ENUM('LOSS','MAINTAIN','INCREASE') NOT NULL,
+                                    target_value   DECIMAL(10,2)   NOT NULL,
                                     start_date   DATETIME   NOT NULL,
-                                    end_date   DATETIME   NULL,
+                                    end_date   DATETIME   NOT NULL,
                                     created_at   DATETIME   NOT NULL default now(),
                                     member_id   bigint   NOT NULL,
                                     constraint pk_goal_id primary key(id)
