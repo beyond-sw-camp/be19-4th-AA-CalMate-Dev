@@ -4,7 +4,7 @@
       <div class="title-wrap">
         <h2>운동 기록</h2>
         <p class="sub">
-          오늘 {{ totalMinutes }}분 운동 · {{ totalKcal }} kcal 소모
+          {{ selectedDateLabel }} {{ totalMinutes }}분 운동 · {{ totalKcal }} kcal 소모
         </p>
       </div>
       <button class="add-btn" @click="openModal">
@@ -54,7 +54,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import api from '@/lib/api'
 
@@ -85,10 +86,11 @@ const resolveFileUrl = (fileUrl) => {
   if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
     return cleaned
   }
-  let path = cleaned.startsWith('/') ? cleaned : '/' + cleaned
+  const path = cleaned.startsWith('/') ? cleaned : '/' + cleaned
   return apiBaseURL + path
 }
 
+const route = useRoute()
 const userStore = useUserStore()
 const memberId = computed(() => userStore.userId)
 
@@ -97,6 +99,22 @@ const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart
   2,
   '0',
 )}-${String(today.getDate()).padStart(2, '0')}`
+
+const selectedDateStr = computed(() => {
+  const q = route.query.date
+  if (typeof q === 'string' && q.match(/^\d{4}-\d{2}-\d{2}$/)) return q
+  return todayStr
+})
+
+const selectedDateLabel = computed(() => {
+  const d = new Date(selectedDateStr.value)
+  if (Number.isNaN(d.getTime())) return selectedDateStr.value
+  return d.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+})
 
 const records = ref([])
 
@@ -110,7 +128,7 @@ const loadRecords = async () => {
 
     const res = await fetchExerciseRecords({
       memberId: memberId.value,
-      date: todayStr,
+      date: selectedDateStr.value,
     })
 
     const list = res.data || []
@@ -140,6 +158,10 @@ onMounted(() => {
   loadRecords()
 })
 
+watch(selectedDateStr, () => {
+  loadRecords()
+})
+
 const openModal = () => {
   editingId.value = null
   editingData.value = null
@@ -162,7 +184,7 @@ const saveRecord = async (payload) => {
     if (editingId.value) {
       await updateExerciseRecord(editingId.value, {
         memberId: memberId.value,
-        date: todayStr,
+        date: selectedDateStr.value,
         type: payload.type,
         category: null,
         minutes: payload.minutes,
@@ -173,7 +195,7 @@ const saveRecord = async (payload) => {
     } else {
       await createExerciseRecord({
         memberId: memberId.value,
-        date: todayStr,
+        date: selectedDateStr.value,
         type: payload.type,
         category: null,
         minutes: payload.minutes,

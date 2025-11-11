@@ -8,7 +8,11 @@
         <span class="badge" :class="statusClass(displayStatus)">{{ displayStatus }}</span>
       </div>
       <h2 class="title">{{ item.title }}</h2>
-      <div class="meta">{{ timeAgo(item.createdAt) }}</div>
+      <div class="meta">
+        <span class="author">작성자: {{ item.author || '일반회원' }}</span>
+        <span class="dot">·</span>
+        <span class="date">작성일: {{ formatDate(item.createdAt) }}</span>
+      </div>
     </section>
 
     <section class="card">
@@ -20,7 +24,10 @@
 
     <section v-if="item.answer && !isEditing" class="answer">
       <header class="answer-head">
-        <div><span class="check">✔</span> 답변이 도착했어요</div>
+        <div>
+          <span class="check">✔</span> 답변이 도착했어요
+          <span class="badge admin">관리자</span>
+        </div>
         <button class="edit-btn" type="button" @click="startEdit">답변 수정</button>
       </header>
       <div class="divider"></div>
@@ -30,10 +37,10 @@
       <footer class="answer-foot">답변 일시: {{ timeAgo(item.answerAt || item.updatedAt || item.createdAt) }}</footer>
     </section>
     <section v-else-if="!isEditing" class="pending">
-      <div class="pending-icon">⏱️</div>
+      <div class="pending-icon">⌛</div>
       <div>
         <div class="pending-title">답변 대기중</div>
-        <div class="pending-desc">아직 답변이 등록되지 않았습니다. 빠른 시일 내에 답변 드리겠습니다.</div>
+        <div class="pending-desc">아직 답변이 등록되지 않았습니다. 빠른 시일 내에 처리하겠습니다.</div>
       </div>
       <div class="pending-actions">
         <button class="add-answer-btn" type="button" @click="startEdit">답변 등록</button>
@@ -51,17 +58,53 @@
         <button v-if="item.answer" class="btn-danger" type="button" @click="clearAnswer">답변 삭제</button>
       </div>
     </section>
+
+    <!-- 댓글/대댓글 -->
+    <section class="comments">
+      <header class="c-head">댓글</header>
+      <div class="c-form">
+        <input v-model="newComment" class="input" placeholder="댓글을 입력하세요" />
+        <button class="btn-primary" type="button" @click="addComment">등록</button>
+      </div>
+      <ul class="c-list">
+        <li v-for="c in comments" :key="c.id" class="c-item">
+          <div class="c-line">
+            <div class="c-content">{{ c.content }}</div>
+            <div class="c-meta">{{ c.author || '일반회원' }} · {{ formatDate(c.createdAt) }}</div>
+          </div>
+          <div class="c-actions">
+            <button class="link" type="button" @click="c.showReply = !c.showReply">답글</button>
+            <button class="link danger" type="button" @click="deleteComment(c.id)">삭제</button>
+          </div>
+          <div v-if="c.showReply" class="c-reply-form">
+            <input v-model="c._replyDraft" class="input" placeholder="답글을 입력하세요" />
+            <button class="btn-ghost" type="button" @click="addReply(c.id, c._replyDraft); c._replyDraft=''">등록</button>
+          </div>
+          <ul class="r-list" v-if="(c.replies || []).length">
+            <li v-for="r in c.replies" :key="r.id" class="r-item">
+              <div class="c-line">
+                <div class="c-content">{{ r.content }}</div>
+                <div class="c-meta">{{ r.author || '일반회원' }} · {{ formatDate(r.createdAt) }}</div>
+              </div>
+              <div class="c-actions">
+                <button class="link danger" type="button" @click="deleteReply(c.id, r.id)">삭제</button>
+              </div>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </section>
   </div>
   <div v-else class="not-found">
     존재하지 않는 문의입니다. <RouterLink to="/main/qna">목록으로</RouterLink>
   </div>
-  
 </template>
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useToast } from '../../lib/toast.js'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
@@ -69,10 +112,12 @@ const item = ref(null)
 const isEditing = ref(false)
 const answerText = ref('')
 const { success, error: toastError } = useToast()
+const userStore = useUserStore()
+const currentAuthor = computed(() => userStore.nickname || userStore.name || '일반회원')
 
 const displayStatus = computed(() => {
   if (item.value?.answer) return '완료'
-  return item.value?.status || '대기중'
+  return item.value?.status || '접수중'
 })
 
 onMounted(() => {
@@ -95,21 +140,12 @@ function goBack() {
 
 function statusClass(s) {
   switch (s) {
-    case '대기중':
-    case '대기 중':
-    case '진행대기':
-    case '처리대기':
-    case '??기중':
-    case '?�기중':
+    case '접수중':
       return 'st-wait'
-    case '처리중':
-    case '처리 중':
     case '진행중':
-    case '진행 중':
-    case '처리�?':
+    case '처리중':
       return 'st-proc'
     case '완료':
-    case '?�료':
       return 'st-done'
     default:
       return 'st-wait'
@@ -129,14 +165,20 @@ function timeAgo(ts) {
   }
 }
 
+function formatDate(ts) {
+  try {
+    return new Date(ts).toLocaleString('ko-KR', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    })
+  } catch { return ts }
+}
+
 function startEdit() {
   answerText.value = item.value?.answer || ''
   isEditing.value = true
 }
-
-function cancelEdit() {
-  isEditing.value = false
-}
+function cancelEdit() { isEditing.value = false }
 
 function persistUpdate(updater) {
   const raw = localStorage.getItem('inquiries')
@@ -159,35 +201,70 @@ function persistUpdate(updater) {
 
 function saveAnswer() {
   const txt = (answerText.value || '').trim()
-  if (!txt) {
-    toastError('답변 내용을 입력해 주세요')
-    return
-  }
+  if (!txt) { toastError('답변 내용을 입력해 주세요'); return }
   const ok = persistUpdate((updated) => {
     updated.answer = txt
     updated.answerAt = new Date().toISOString()
+    updated.answerAuthor = '관리자'
     updated.status = '완료'
   })
-  if (ok) {
-    success('답변이 저장되었습니다')
-    isEditing.value = false
-  } else {
-    toastError('저장 중 오류가 발생했습니다')
-  }
+  if (ok) { success('답변이 저장되었습니다'); isEditing.value = false } else { toastError('저장 중 오류가 발생했습니다') }
 }
 
 function clearAnswer() {
   const ok = persistUpdate((updated) => {
     delete updated.answer
     delete updated.answerAt
-    updated.status = '대기중'
+    updated.status = '접수중'
   })
-  if (ok) {
-    success('답변이 삭제되었습니다')
-    isEditing.value = false
-  } else {
-    toastError('삭제 중 오류가 발생했습니다')
-  }
+  if (ok) { success('답변이 삭제되었습니다'); isEditing.value = false } else { toastError('삭제 중 오류가 발생했습니다') }
+}
+
+// 댓글/대댓글
+const newComment = ref('')
+const comments = computed(() => Array.isArray(item.value?.comments) ? item.value.comments : [])
+
+function addComment(){
+  const txt = (newComment.value || '').trim()
+  if (!txt) return
+  const ok = persistUpdate((updated) => {
+    const arr = Array.isArray(updated.comments) ? updated.comments : []
+    arr.unshift({ id: `c_${Date.now()}`, author: currentAuthor.value, content: txt, createdAt: new Date().toISOString(), replies: [] })
+    updated.comments = arr
+  })
+  if (ok) newComment.value = ''
+}
+
+function addReply(commentId, text){
+  const t = (text || '').trim()
+  if (!t) return
+  persistUpdate((updated) => {
+    const arr = Array.isArray(updated.comments) ? updated.comments : []
+    const target = arr.find(c => String(c.id) === String(commentId))
+    if (target){
+      target.replies = Array.isArray(target.replies) ? target.replies : []
+      target.replies.push({ id: `r_${Date.now()}`, author: currentAuthor.value, content: t, createdAt: new Date().toISOString() })
+    }
+    updated.comments = arr
+  })
+}
+
+function deleteComment(commentId){
+  persistUpdate((updated) => {
+    const arr = Array.isArray(updated.comments) ? updated.comments : []
+    updated.comments = arr.filter(c => String(c.id) !== String(commentId))
+  })
+}
+
+function deleteReply(commentId, replyId){
+  persistUpdate((updated) => {
+    const arr = Array.isArray(updated.comments) ? updated.comments : []
+    const target = arr.find(c => String(c.id) === String(commentId))
+    if (target && Array.isArray(target.replies)){
+      target.replies = target.replies.filter(r => String(r.id) !== String(replyId))
+    }
+    updated.comments = arr
+  })
 }
 </script>
 
@@ -196,15 +273,19 @@ function clearAnswer() {
 .back-link { background: transparent; border: 0; color: #6b7280; font-size: 14px; text-align: left; cursor: pointer; }
 .back-link:hover { color: #111827; }
 
-.summary { background: #f5f9ff; border: 1px solid #e7eefc; border-radius: 18px; padding: 16px 18px; }
+.summary { background: #f5f9ff; border: 1px solid #e7eefc; border-radius: 18px; padding: 16px 18px; position: relative; }
 .summary-top { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
 .badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 8px; font-size: 12px; font-weight: 700; background: #f3f4f6; color: #374151; }
 .badge.cat { background: #e8f0ff; color: #1d4ed8; }
+.badge.admin { margin-left: 8px; background: #eef2ff; color: #1d4ed8; }
 .st-wait { background: #fff7ed; color: #c2410c; }
 .st-proc { background: #e0f2fe; color: #0369a1; }
 .st-done { background: #ecfdf5; color: #047857; }
 .title { margin: 0; font-size: 18px; font-weight: 800; color: #111827; }
-.meta { margin-top: 6px; font-size: 12px; color: #9ca3af; }
+.meta { margin-top: 6px; font-size: 12px; color: #9ca3af; display: flex; gap: 6px; align-items: center; }
+.dot { opacity: .6; }
+.author { color: #374151; }
+.date { color: #6b7280; }
 
 .card { background: #fff; border: 1px solid #efeff4; border-radius: 18px; overflow: hidden; }
 .card-head { padding: 14px 16px; font-weight: 700; color: #374151; border-bottom: 1px solid #f1f2f6; background: #fff; }
@@ -245,4 +326,20 @@ function clearAnswer() {
 .btn-ghost:hover { background: #f3f4f8; }
 .btn-danger { background: #fee2e2; border: 1px solid #fecaca; color: #b91c1c; padding: 10px 14px; border-radius: 12px; cursor: pointer; }
 .btn-danger:hover { background: #fecaca; }
+
+/* 댓글/대댓글 스타일 */
+.comments { background:#fff; border:1px solid #efeff4; border-radius:18px; padding:16px; }
+.c-head { font-weight:800; color:#374151; margin-bottom:10px; }
+.c-form { display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+.c-list { list-style:none; margin:0; padding:0; display:grid; gap:12px; }
+.c-item { border:1px solid #eef0f4; border-radius:12px; padding:10px; }
+.c-line { display:flex; justify-content:space-between; gap:10px; }
+.c-content { white-space:pre-wrap; color:#111827; }
+.c-meta { color:#9ca3af; font-size:12px; }
+.c-actions { margin-top:6px; display:flex; gap:8px; }
+.c-actions .link { background:none; border:0; color:#2563eb; cursor:pointer; font-size:12px; }
+.c-actions .link.danger { color:#e11d48; }
+.c-reply-form { margin-top:8px; display:flex; gap:8px; }
+.r-list { list-style:none; margin:8px 0 0; padding-left:12px; display:grid; gap:8px; }
+.r-item { border:1px dashed #e5e7eb; border-radius:10px; padding:8px; background:#fafafa; }
 </style>

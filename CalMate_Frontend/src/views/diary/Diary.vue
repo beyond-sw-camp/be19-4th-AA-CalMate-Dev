@@ -194,13 +194,22 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useToast } from '../../lib/toast.js'
 
 const { success } = useToast()
+const router = useRouter()
 
-const todayKey = new Date().toISOString().split('T')[0]
+const route = useRoute()
+const todayKey = (() => {
+  const q = route?.query?.date
+  if (typeof q === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(q)) return q
+  return new Date().toISOString().split('T')[0]
+})()
+
 const todayLabel = computed(() =>
-  new Date().toLocaleDateString('ko-KR', {
+  new Date(todayKey).toLocaleDateString('ko-KR', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -324,6 +333,7 @@ function handleSave() {
   )
 
   success('일기가 저장되었습니다!')
+  router.push({ name: 'main-diary-done', query: { date: todayKey } })
 }
 
 // 날짜 출력용

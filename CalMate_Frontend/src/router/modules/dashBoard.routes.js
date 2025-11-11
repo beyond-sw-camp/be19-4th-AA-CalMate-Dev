@@ -30,6 +30,11 @@ export default [
         component: () => import('@/views/diary/Diary.vue'),
       },
       {
+        path: 'diary/done',
+        name: 'main-diary-done',
+        component: () => import('@/views/diary/DiaryDone.vue'),
+      },
+      {
         path: 'calendar',
         name: 'main-calendar',
         component: () => import('@/views/calendar/Calendar.vue'),

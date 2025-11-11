@@ -13,6 +13,9 @@
           <div class="month"><span class="emoji">🗓️</span> {{ monthLabel }}</div>
           <button class="nav-btn" type="button" @click="nextMonth" aria-label="다음 달">›</button>
         </header>
+        <div class="month-badges" @click="toggleBadgePopover" title="이번 달 트로피 개수">
+          🏆 총 개수: <span class="count">{{ monthBadgeCount }}</span>
+        </div>
 
         <div class="daynames">
           <span v-for="(day, i) in dayNames" :key="day" :class="dayColor(i)">{{ day }}</span>
@@ -89,7 +92,7 @@
             <div class="j-empty">운동 기록이 없습니다.</div>
           </div>
 
-          <div class="journal" v-if="journalEntry">
+          <div class="journal clickable" v-if="journalEntry" @click="openDiary">
             <div class="j-head">
               <span class="dot purple"></span>
               <span class="j-title">일기</span>
@@ -116,6 +119,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 // util: date key YYYY-MM-DD
 function toKey(y, m, d){
@@ -130,6 +134,7 @@ function safeParse(key){
 
 const currentDate = ref(new Date())
 const selectedDate = ref(null)
+const router = useRouter()
 
 const dayNames = ['일','월','화','수','목','금','토']
 
@@ -206,6 +211,23 @@ const calendarCells = computed(() => {
   return cells
 })
 
+// 달성 일자 및 총 개수
+const badgeDays = computed(() => {
+  const { daysInMonth, year, month } = monthMeta.value
+  const res = []
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = toKey(year, month, d)
+    const hasDiary = Boolean(diariesByDate.value[key])
+    const intake = Number(dietTotalsByDate.value[key]?.totalKcal || 0)
+    const burn = Number(exerciseByDate.value[key]?.burnKcal || 0)
+    if (hasDiary && intake > 0 && burn > 0) res.push(d)
+  }
+  return res
+})
+const monthBadgeCount = computed(() => badgeDays.value.length)
+const showBadgePopover = ref(false)
+function toggleBadgePopover(){ showBadgePopover.value = !showBadgePopover.value }
+
 function getDaysInMonth(date) {
   const year = date.getFullYear()
   const month = date.getMonth()
@@ -224,11 +246,13 @@ function selectDate(day) {
 function previousMonth() {
   const d = currentDate.value
   currentDate.value = new Date(d.getFullYear(), d.getMonth() - 1, 1)
+  showBadgePopover.value = false
 }
 
 function nextMonth() {
   const d = currentDate.value
   currentDate.value = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+  showBadgePopover.value = false
 }
 
 function dayColor(index) {
@@ -264,6 +288,16 @@ const exerciseRecords = computed(() => {
   const rec = exerciseByDate.value[key]?.records || []
   return Array.isArray(rec) ? rec : []
 })
+
+function openDiary(){
+  if (!selectedDate.value) return
+  const key = toKey(
+    selectedDate.value.getFullYear(),
+    selectedDate.value.getMonth(),
+    selectedDate.value.getDate()
+  )
+  router.push({ name: 'main-diary-done', query: { date: key } })
+}
 </script>
 
 <style scoped>
@@ -275,7 +309,7 @@ const exerciseRecords = computed(() => {
 .card { background: #fff; border: 1px solid #eef0f4; border-radius: 18px; padding: 16px; }
 
 .calendar { display: flex; flex-direction: column; gap: 12px; }
-.cal-head { display: flex; align-items: center; justify-content: space-between; }
+.cal-head { display: flex; align-items: center; gap: 8px; }
 .nav-btn { width: 36px; height: 36px; border-radius: 999px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; font-size: 18px; }
 .nav-btn:hover { background: #f9fafb; }
 .month { display: flex; align-items: center; gap: 8px; font-weight: 700; }
@@ -330,6 +364,8 @@ const exerciseRecords = computed(() => {
 .e-meta { color: #6b7280; }
 
 .journal { border: 1px solid #eef0f4; border-radius: 12px; padding: 10px 12px; }
+.journal.clickable { cursor: pointer; }
+.journal.clickable:hover { background: #fafafb; }
 .j-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .j-title { font-weight: 700; color: #374151; }
 .badge { background: #f3f4f6; color: #374151; border-radius: 8px; padding: 2px 6px; font-size: 12px; margin-left: 4px; }
@@ -340,3 +376,5 @@ const exerciseRecords = computed(() => {
   .cols { grid-template-columns: 1fr; }
 }
 </style>
+
+\n.month-badges { margin-left: auto; font-weight: 800; color: #111827; background: #fff7ed; border: 1px solid #fdebd3; padding: 6px 10px; border-radius: 999px; display: flex; align-items: center; gap: 6px; }\n.month-badges .count { color: #c2410c; }\n

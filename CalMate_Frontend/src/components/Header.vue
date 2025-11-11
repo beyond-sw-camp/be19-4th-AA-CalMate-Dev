@@ -69,10 +69,10 @@
         <li class="menu-item"
         :class="{ active: isActive('/main/diary') }"
         >
-          <RouterLink class="menu-link" to="/main/diary">
+          <a class="menu-link" href="#" @click.prevent="goDiary">
             <img :src="diaryIcon" alt="" class="menu-icon" />
             <span>일기</span>
-          </RouterLink>
+          </a>
         </li>
 
         <li class="menu-item"
@@ -169,6 +169,19 @@ async function handleLogout() {
   userStore.logOut();
   // console.log('로그아웃 실행!')
   await router.push('/sign/signIn')
+}
+
+function goDiary(){
+  const today = new Date()
+  const key = today.toISOString().split('T')[0]
+  let entries = []
+  try { entries = JSON.parse(localStorage.getItem('journalEntries') || '[]') } catch { entries = [] }
+  const exists = Array.isArray(entries) && entries.some(e => e?.date === key)
+  if (exists) {
+    router.push({ name: 'main-diary-done', query: { date: key } })
+  } else {
+    router.push({ name: 'main-diary', query: { date: key } })
+  }
 }
 
 </script>
