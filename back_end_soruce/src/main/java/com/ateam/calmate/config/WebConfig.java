@@ -22,11 +22,15 @@ public class WebConfig implements WebMvcConfigurer {
 
         // 프로필 업로드 경로 (ex: /uploads/profile/)
         registry.addResourceHandler(profileDirPath + "**")
-                .addResourceLocations("file:" + baseDir + profileDirPath);
+                .addResourceLocations("file:" + System.getProperty("user.dir") + profileDirPath);
 
-        // 식단 기본 이미지
         registry.addResourceHandler("/img/meal/**")
-                .addResourceLocations("file:" + baseDir + "/img/meal/");
+                .addResourceLocations("file:" + System.getProperty("user.dir") + "/img/meal/");
+
+        registry.addResourceHandler("/img/exercise/**")
+                .addResourceLocations("file:" + System.getProperty("user.dir") + "/img/exercise/");
+    }
+
 
         // 운동 기본 이미지
         registry.addResourceHandler("/img/exercise/**")
