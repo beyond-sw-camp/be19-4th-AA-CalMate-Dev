@@ -418,7 +418,7 @@ CREATE TABLE `diary_file` (
                               `created_at` DATETIME NOT NULL,
                               `state` VARCHAR(255) NOT NULL,
                               `original_file` VARCHAR(255) NOT NULL,
-                              `rename` INT NOT NULL,
+                              `rename` VARCHAR(255) NOT NULL,
                               `diary_id` INT NOT NULL,
                               `extend_file_path_id` BIGINT NOT NULL,
                               CONSTRAINT `pk_diary_file` PRIMARY KEY (`id`)
