@@ -43,8 +43,6 @@ public class MemberServiceImpl implements MemberService {
     private final MemberAuthorityRepository memberAuthorityRepository;
     private final BaseOfPointRepository baseOfPointRepository;
     private final PointRepository pointRepository;
-
-
     private final PasswordEncoder passwordEncoder;  //평문과 암호화 된 다이제스트를 비교하기 위한 도구
 
     @Autowired
@@ -221,15 +219,14 @@ public class MemberServiceImpl implements MemberService {
         ResponseProfileImageDTO responseProfileImageDTO = null;
         try {
             responseProfileImageDTO = profileImageService.updateProfileImage(singleFile, id, request);
-
             UploadFile findProfile = profileImageRepository.findByMemberId(id);
 
             //파일이 없었을때
             if (findProfile == null) {
                 findProfile = modelMapper.map(responseProfileImageDTO, UploadFile.class);
             } else { // 기존 파일이있어서 덮어 쓰기
-                findProfile.setFilePath(responseProfileImageDTO.getFilePath());
-                findProfile.setFilePath(responseProfileImageDTO.getDirPath());
+                findProfile.setReFileName(responseProfileImageDTO.getReFileName());
+                findProfile.setOriginalFileName(responseProfileImageDTO.getOriginalFileName());
             }
             profileImageRepository.save(findProfile);
 

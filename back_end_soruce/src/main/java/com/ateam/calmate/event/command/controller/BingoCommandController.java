@@ -56,4 +56,42 @@ public class BingoCommandController {
         var result = service.checkCellWithUpload(cmd, file.getInputStream());
         return ResponseEntity.ok(result);
     }
+
+    @DeleteMapping("/files/{fileId}")
+    public ResponseEntity<DeleteFileResponse> deleteUploadedFile(
+            @PathVariable Integer fileId,
+            @RequestParam Long memberId
+    ) {
+        try {
+            boolean deleted = service.deleteUploadedFile(fileId, memberId);
+            return ResponseEntity.ok(new DeleteFileResponse(true, deleted, "파일이 삭제되었습니다."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(new DeleteFileResponse(false, false, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(new DeleteFileResponse(false, false, "파일 삭제 중 오류가 발생했습니다."));
+        }
+    }
+
+    @DeleteMapping("/boards/{boardId}/cells/{cellId}/check")
+    public ResponseEntity<CancelCheckResponse> cancelCellCheck(
+            @PathVariable Integer boardId,
+            @PathVariable Integer cellId,
+            @RequestParam Long memberId
+    ) {
+        try {
+            boolean cancelled = service.cancelCellCheck(boardId, cellId, memberId);
+            return ResponseEntity.ok(new CancelCheckResponse(true, cancelled, "셀 체크가 취소되었습니다."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(new CancelCheckResponse(false, false, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(new CancelCheckResponse(false, false, "셀 체크 취소 중 오류가 발생했습니다."));
+        }
+    }
+
+    public record DeleteFileResponse(boolean success, boolean fileDeleted, String message) {}
+    public record CancelCheckResponse(boolean success, boolean cancelled, String message) {}
 }

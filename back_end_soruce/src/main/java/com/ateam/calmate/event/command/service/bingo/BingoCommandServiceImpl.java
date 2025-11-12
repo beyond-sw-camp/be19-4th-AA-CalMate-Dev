@@ -126,6 +126,74 @@ public class BingoCommandServiceImpl implements BingoCommandService {
         return defaultExtendFilePathId;
     }
 
+    @Override
+    @Transactional
+    public boolean deleteUploadedFile(Integer fileId, Long memberId) {
+        // 파일 업로드 엔티티 조회
+        BingoFileUploadEntity upload = uploadRepo.findById(fileId)
+                .orElseThrow(() -> new IllegalArgumentException("업로드된 파일을 찾을 수 없습니다."));
+
+        // 연관된 셀 조회
+        BingoCellEntity cell = upload.getCell();
+        BingoBoardEntity board = cell.getBoard();
+
+        // 본인의 보드인지 확인
+        if (!board.getMemberId().equals(memberId)) {
+            throw new IllegalArgumentException("본인 보드의 파일만 삭제할 수 있습니다.");
+        }
+
+        // 파일 시스템에서 파일 삭제
+        String relativePath = upload.getPath();
+        boolean fileDeleted = fileStorage.delete(relativePath);
+
+        // DB에서 파일 업로드 기록 삭제
+        uploadRepo.delete(upload);
+
+        return fileDeleted;
+    }
+
+    @Override
+    @Transactional
+    public boolean cancelCellCheck(Integer boardId, Integer cellId, Long memberId) {
+        // 셀 조회
+        BingoCellEntity cell = cellRepo.findById(cellId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 셀입니다."));
+
+        // 보드 조회
+        BingoBoardEntity board = boardRepo.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 보드입니다."));
+
+        // 본인의 보드인지 확인
+        if (!board.getMemberId().equals(memberId)) {
+            throw new IllegalArgumentException("본인 보드만 수정할 수 있습니다.");
+        }
+
+        // 셀이 체크되어 있는지 확인
+        if (!Boolean.TRUE.equals(cell.getChecked())) {
+            throw new IllegalArgumentException("이미 체크 취소된 셀입니다.");
+        }
+
+        // 연관된 파일들 찾아서 삭제
+        List<BingoFileUploadEntity> uploads = uploadRepo.findByBingoCellId(cellId);
+        for (BingoFileUploadEntity upload : uploads) {
+            // 파일 시스템에서 파일 삭제
+            try {
+                fileStorage.delete(upload.getPath());
+            } catch (Exception e) {
+                // 파일 삭제 실패해도 계속 진행
+                System.err.println("Failed to delete file: " + upload.getPath());
+            }
+        }
+        // DB에서 파일 업로드 기록 삭제
+        uploadRepo.deleteAll(uploads);
+
+        // 셀 체크 취소
+        cell.setChecked(false);
+        cell.setCheckedAt(null);
+
+        return true;
+    }
+
     private void recordPointHistory(BingoBoardEntity board, int amount, Point.Distinction distinction) {
         Point history = new Point();
         history.setMemberId(board.getMemberId());

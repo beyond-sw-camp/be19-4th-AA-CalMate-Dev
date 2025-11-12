@@ -34,4 +34,5 @@ public class ResponseMemberDTO {
     private String rankName;
     private Long memStsId;
     private String profilePath;
+    private Integer point;
 }

@@ -45,6 +45,25 @@ public class LocalFileStorageAdapter implements FileStoragePort {
         }
     }
 
+    @Override
+    public boolean delete(String relativePath) {
+        try {
+            // 상대 경로를 절대 경로로 변환
+            Path filePath = Paths.get(System.getProperty("user.dir"), basePath, relativePath);
+
+            // 파일이 존재하는지 확인
+            if (!Files.exists(filePath)) {
+                return false;
+            }
+
+            // 파일 삭제
+            Files.delete(filePath);
+            return true;
+        } catch (IOException e) {
+            throw new RuntimeException("파일 삭제 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
+    }
+
     private String getFileExtension(String filename) {
         if (filename == null || !filename.contains(".")) {
             return "";

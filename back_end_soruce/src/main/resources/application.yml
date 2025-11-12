@@ -47,7 +47,8 @@ logging:
 token:
   access:
     secret: v7o98gdK42iddFqTxH07Yjv18KbwIZWQZu7NRPeR9+ji9tOGDX2r8PO3mGptklEdEiIB0RMT066q3qb19YBfqQ==
-    expiration_time: 600000 # 10 분
+#    expiration_time: 600000 # 10 분
+    expiration_time: 6000 # 10 분
   refresh:
     secret: QUohbgcqwRhk+Xi7zbhgWrkGA0SFRI6OIjzjOsPMtXN5G6RtwBuX0UKENxM07M9WRQBnSuvmU3J4GEpPzqWj/w==
     expiration_time: 86400000 # 1 일 [ms] 단위
@@ -79,3 +80,4 @@ mybatis:
 # 프로필 이지미 관련 경로
 profile:
   dirPath: /img/profile/
+
