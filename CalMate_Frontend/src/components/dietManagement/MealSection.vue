@@ -56,6 +56,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import AddFoodModal from './AddFoodModal.vue'
 import deleteIcon from '@/assets/images/delete.png'
 import editIcon from '@/assets/images/edit.png'
@@ -67,6 +68,8 @@ import api from '@/lib/api'
 const props = defineProps({
   label: String,
 })
+
+const emit = defineEmits(['update-total', 'meal-point-earned'])
 
 const mealKeyMap = {
   아침: 'breakfast',
@@ -92,11 +95,9 @@ const foods = ref([])
 const userStore = useUserStore()
 const memberId = computed(() => userStore.userId)
 
-// 백엔드 baseURL (예: http://localhost:8081)
 const apiBaseURL = (api.defaults.baseURL || '').replace(/\/$/, '')
 
-// fileUrl → 최종 img src 로 변환
-const resolveFileUrl = fileUrl => {
+const resolveFileUrl = (fileUrl) => {
   if (!fileUrl) return ''
   if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
     return fileUrl
@@ -111,8 +112,16 @@ const resolveFileUrl = fileUrl => {
   return apiBaseURL + path
 }
 
+const route = useRoute()
+
 const currentDate = computed(() => {
-  return new Date().toISOString().slice(0, 10)
+  const q = route.query.date
+  if (typeof q === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(q)) return q
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 })
 
 const recalcTotal = () => {
@@ -120,6 +129,7 @@ const recalcTotal = () => {
   if (mealKey) {
     dietStore.meals[mealKey] = total
   }
+  emit('update-total', total)
 }
 
 const loadFoods = async () => {
@@ -135,14 +145,14 @@ const loadFoods = async () => {
     const meals = Array.isArray(data) ? data : data ? [data] : []
 
     foods.value = meals
-      .filter(meal => !!meal.food)
-      .map(meal => {
+      .filter((meal) => !!meal.food)
+      .map((meal) => {
         const food = meal.food
         const files = meal.files || []
 
         const images = files
-          .filter(f => f.fileUrl)
-          .map(f => ({
+          .filter((f) => f.fileUrl)
+          .map((f) => ({
             id: f.fileId,
             url: resolveFileUrl(f.fileUrl),
           }))
@@ -171,10 +181,10 @@ const openAddModal = () => {
   showModal.value = true
 }
 
-const openEditModal = food => {
+const openEditModal = (food) => {
   editingFood.value = {
     ...food,
-    images: food.images ? food.images.map(img => ({ ...img })) : [],
+    images: food.images ? food.images.map((img) => ({ ...img })) : [],
   }
   showModal.value = true
 }
@@ -184,7 +194,7 @@ const closeModal = () => {
   editingFood.value = null
 }
 
-const handleSaveFood = async food => {
+const handleSaveFood = async (food) => {
   try {
     if (!dietType || !memberId.value) return
 
@@ -219,6 +229,7 @@ const handleSaveFood = async food => {
         food: bodyFood,
         files: food.files || [],
       })
+      emit('meal-point-earned')
     }
 
     await loadFoods()
@@ -229,10 +240,10 @@ const handleSaveFood = async food => {
   }
 }
 
-const removeFood = async id => {
+const removeFood = async (id) => {
   try {
     await deleteDiet(id)
-    foods.value = foods.value.filter(f => f.id !== id)
+    foods.value = foods.value.filter((f) => f.id !== id)
     recalcTotal()
   } catch (e) {
     console.error('식단 삭제 실패', e)

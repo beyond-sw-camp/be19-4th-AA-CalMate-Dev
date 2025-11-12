@@ -1,12 +1,11 @@
 <template>
   <div class="community">
-
     <!-- ✅ 상단 카테고리 + 글쓰기 버튼 -->
     <div class="community-top">
       <ul class="category-tabs">
-        <li 
-          v-for="item in categories" 
-          :key="item.value" 
+        <li
+          v-for="item in categories"
+          :key="item.value"
           :class="{ active: selectedCategory === item.value }"
           @click="selectCategory(item.value)"
         >
@@ -14,9 +13,10 @@
         </li>
       </ul>
 
-      <RouterLink to="/community/write" class="write-btn">
+      <!-- ✅ 비로그인 → 로그인 유도 / 로그인 → 글쓰기 이동 -->
+      <button class="write-btn" @click="goWrite">
         + 글쓰기
-      </RouterLink>
+      </button>
     </div>
 
     <!-- ✅ 게시글 목록 -->
@@ -27,16 +27,17 @@
         :post="post"
       />
     </div>
-
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
 import CommunityPostCard from '@/components/CommunityPostCard.vue'
-import { useUserStore } from "@/stores/user"  // ✅ 내글 필터용
+import { useUserStore } from "@/stores/user"
 import { fetchPostList } from "@/api/post"
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 const userStore = useUserStore()
 
 /* ✅ 카테고리 목록 */
@@ -59,7 +60,6 @@ const categoryToTagName = {
 
 /* ✅ 현재 선택된 카테고리 */
 const selectedCategory = ref("all")
-
 const posts = ref([])
 
 // ✅ API로 목록 불러오기
@@ -73,15 +73,23 @@ const filteredPosts = computed(() => {
   if (selectedCategory.value === "all") return posts.value
 
   if (selectedCategory.value === "my") {
-    return posts.value.filter(p => p.authorName === userStore.nickname)   // 로그인 연동 시 여기 수정
+    // TODO: 목록 API가 작성자 memberId 를 내려주면 userId 비교로 바꾸는 걸 추천
+    return posts.value.filter(p => p.authorName === userStore.nickname)
   }
 
-  // ✅ 카테고리 값 → DB tag.name 변환 후 필터
   return posts.value.filter(p => p.tagName === categoryToTagName[selectedCategory.value])
-  // return posts.value.filter(p => p.tagName === selectedCategory.value)
 })
 
-const selectCategory = (value) => selectedCategory.value = value
+const selectCategory = (value) => (selectedCategory.value = value)
+
+/* ✅ 글쓰기 버튼 클릭 핸들러 */
+const goWrite = () => {
+  if (!userStore.isLoggedIn) {
+    alert("로그인이 필요합니다 😊")
+    return router.push("/sign/signIn")
+  }
+  router.push("/community/write")
+}
 </script>
 
 <style scoped>
@@ -131,6 +139,7 @@ const selectCategory = (value) => selectedCategory.value = value
   text-decoration: none;
   color: #6c63ff;
   transition: 0.2s;
+  cursor: pointer;
 }
 
 .write-btn:hover {

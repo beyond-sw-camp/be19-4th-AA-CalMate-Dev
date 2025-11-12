@@ -51,13 +51,18 @@
 
       <!-- Right: Details -->
       <section class="card details">
-        <h3 class="details-title">{{ selectedDate ? selectedLabel + ' 상세' : '날짜를 선택하세요' }}</h3>
+        <h3 class="details-title">
+          {{ selectedDate ? selectedLabel + ' 상세' : '날짜를 선택하세요' }}
+        </h3>
+
         <div v-if="!selectedDate" class="empty">
           <div class="empty-icon">📅</div>
           <div class="empty-text">날짜를 선택하여 상세 내용을 확인하세요</div>
         </div>
+
         <div v-else class="detail-body">
-          <div class="summary">
+          <!-- 요약 박스 클릭 → 식단 페이지 -->
+          <div class="summary clickable" @click="goDiet">
             <div class="row">
               <div class="label">섭취 칼로리</div>
               <div class="value">{{ summary.intakeKcal }}<span class="unit">kcal</span></div>
@@ -72,7 +77,8 @@
             </div>
           </div>
 
-          <div class="workout" v-if="exerciseRecords.length">
+          <!-- 운동 박스 클릭 → 운동 페이지 -->
+          <div class="workout" v-if="exerciseRecords.length" @click="goExercise">
             <div class="e-head">
               <span class="dot blue"></span>
               <span class="e-title">운동</span>
@@ -84,7 +90,7 @@
               </li>
             </ul>
           </div>
-          <div class="workout" v-else>
+          <div class="workout" v-else @click="goExercise">
             <div class="e-head">
               <span class="dot blue"></span>
               <span class="e-title">운동</span>
@@ -120,80 +126,89 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { fetchExerciseRecords } from '@/api/exerciseRecords'
+import { getDietByType } from '@/api/diet'
+import { useUserStore } from '@/stores/user'
 
-// util: date key YYYY-MM-DD
-function toKey(y, m, d){
-  const mm = String(m + 1).padStart(2,'0')
-  const dd = String(d).padStart(2,'0')
+const MEAL_TYPES = ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK']
+
+function toKey(y, m, d) {
+  const mm = String(m + 1).padStart(2, '0')
+  const dd = String(d).padStart(2, '0')
   return `${y}-${mm}-${dd}`
 }
 
-function safeParse(key){
-  try { return JSON.parse(localStorage.getItem(key) || 'null') } catch { return null }
+function safeParse(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || 'null')
+  } catch {
+    return null
+  }
 }
 
+const router = useRouter()
+const userStore = useUserStore()
 const currentDate = ref(new Date())
 const selectedDate = ref(null)
-const router = useRouter()
+const memberId = computed(() => userStore.userId)
 
-const dayNames = ['일','월','화','수','목','금','토']
+const dayNames = ['일', '월', '화', '수', '목', '금', '토']
 
 const monthMeta = computed(() => getDaysInMonth(currentDate.value))
-
 const monthLabel = computed(() =>
   new Date(monthMeta.value.year, monthMeta.value.month, 1).toLocaleDateString('ko-KR', {
     year: 'numeric',
-    month: 'long',
+    month: 'long'
   })
 )
 
 const selectedLabel = computed(() => {
   if (!selectedDate.value) return ''
-  return selectedDate.value.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })
+  return selectedDate.value.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short'
+  })
 })
 
-// load external data snapshots from localStorage
 const diariesByDate = computed(() => {
   const arr = safeParse('journalEntries') || []
   const map = {}
-  for (const e of arr){
+  for (const e of arr) {
     if (!e?.date) continue
     map[e.date] = e
   }
   return map
 })
 
-// expected shape: { [date]: { totalKcal: number } }
-const dietTotalsByDate = computed(() => safeParse('dietTotalsByDate') || {})
-
-// expected shape: { [date]: { burnKcal: number, records: any[] } }
-const exerciseByDate = computed(() => safeParse('exerciseRecordsByDate') || {})
+const dietTotalsByDate = ref({})
+const exerciseByDate = ref({})
 
 const calendarCells = computed(() => {
   const { daysInMonth, startingDayOfWeek, year, month } = monthMeta.value
   const totalCells = Math.ceil((daysInMonth + startingDayOfWeek) / 7) * 7
   const today = new Date()
-
   const cells = []
   for (let i = 0; i < totalCells; i++) {
     if (i < startingDayOfWeek || i >= daysInMonth + startingDayOfWeek) {
       cells.push({ key: `empty-${i}`, isPlaceholder: true })
       continue
     }
-
     const day = i - startingDayOfWeek + 1
-    const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
+    const isToday =
+      day === today.getDate() &&
+      month === today.getMonth() &&
+      year === today.getFullYear()
     const isSelected =
       selectedDate.value &&
       selectedDate.value.getDate() === day &&
       selectedDate.value.getMonth() === month &&
       selectedDate.value.getFullYear() === year
-
     const key = toKey(year, month, day)
     const hasDiary = Boolean(diariesByDate.value[key])
     const intake = Number(dietTotalsByDate.value[key]?.totalKcal || 0)
     const burn = Number(exerciseByDate.value[key]?.burnKcal || 0)
-
     cells.push({
       key: `${year}-${month + 1}-${day}`,
       isPlaceholder: false,
@@ -204,14 +219,13 @@ const calendarCells = computed(() => {
         diary: hasDiary,
         diet: intake > 0,
         exercise: burn > 0,
-        allDone: hasDiary && intake > 0 && burn > 0,
+        allDone: hasDiary && intake > 0 && burn > 0
       }
     })
   }
   return cells
 })
 
-// 달성 일자 및 총 개수
 const badgeDays = computed(() => {
   const { daysInMonth, year, month } = monthMeta.value
   const res = []
@@ -226,7 +240,9 @@ const badgeDays = computed(() => {
 })
 const monthBadgeCount = computed(() => badgeDays.value.length)
 const showBadgePopover = ref(false)
-function toggleBadgePopover(){ showBadgePopover.value = !showBadgePopover.value }
+function toggleBadgePopover() {
+  showBadgePopover.value = !showBadgePopover.value
+}
 
 function getDaysInMonth(date) {
   const year = date.getFullYear()
@@ -238,9 +254,67 @@ function getDaysInMonth(date) {
   return { daysInMonth, startingDayOfWeek, year, month }
 }
 
-function selectDate(day) {
+async function selectDate(day) {
   const { year, month } = monthMeta.value
-  selectedDate.value = new Date(year, month, day)
+  const dateObj = new Date(year, month, day)
+  selectedDate.value = dateObj
+  if (!memberId.value) return
+  const dateKey = toKey(year, month, day)
+
+  try {
+    const dietResponses = await Promise.all(
+      MEAL_TYPES.map(type =>
+        getDietByType({ date: dateKey, type, memberId: memberId.value })
+      )
+    )
+    const dietList = dietResponses.flatMap(res => res.data || [])
+    const intakeKcal = dietList.reduce((sum, item) => {
+      const kcalFromFood =
+        item?.food && item.food.kcal != null ? Number(item.food.kcal) : 0
+      const kcalDirect =
+        item?.kcal != null ? Number(item.kcal) : 0
+      const kcal = !isNaN(kcalFromFood) && kcalFromFood > 0 ? kcalFromFood : kcalDirect
+      return sum + (isNaN(kcal) ? 0 : kcal)
+    }, 0)
+
+    dietTotalsByDate.value = {
+      ...dietTotalsByDate.value,
+      [dateKey]: { totalKcal: intakeKcal }
+    }
+
+    const { data: exerciseList = [] } = await fetchExerciseRecords({
+      memberId: memberId.value,
+      date: dateKey
+    })
+    const normalizedExerciseList = Array.isArray(exerciseList)
+      ? exerciseList.map(r => ({
+          ...r,
+          minutes: r.min,
+          kcal: r.burnedKcal
+        }))
+      : []
+    const burnKcal = normalizedExerciseList.reduce((sum, item) => {
+      const v = Number(item.kcal ?? 0)
+      return sum + (isNaN(v) ? 0 : v)
+    }, 0)
+    exerciseByDate.value = {
+      ...exerciseByDate.value,
+      [dateKey]: {
+        burnKcal,
+        records: normalizedExerciseList
+      }
+    }
+  } catch (e) {
+    console.error('calendar selectDate error', e)
+    dietTotalsByDate.value = {
+      ...dietTotalsByDate.value,
+      [dateKey]: { totalKcal: 0 }
+    }
+    exerciseByDate.value = {
+      ...exerciseByDate.value,
+      [dateKey]: { burnKcal: 0, records: [] }
+    }
+  }
 }
 
 function previousMonth() {
@@ -261,10 +335,13 @@ function dayColor(index) {
   return ''
 }
 
-// summary for selected date
 const summary = computed(() => {
   if (!selectedDate.value) return { intakeKcal: 0, burnKcal: 0, netKcal: 0 }
-  const key = toKey(selectedDate.value.getFullYear(), selectedDate.value.getMonth(), selectedDate.value.getDate())
+  const key = toKey(
+    selectedDate.value.getFullYear(),
+    selectedDate.value.getMonth(),
+    selectedDate.value.getDate()
+  )
   const intakeKcal = Number(dietTotalsByDate.value[key]?.totalKcal || 0)
   const burnKcal = Number(exerciseByDate.value[key]?.burnKcal || 0)
   return { intakeKcal, burnKcal, netKcal: intakeKcal - burnKcal }
@@ -272,30 +349,64 @@ const summary = computed(() => {
 
 const journalEntry = computed(() => {
   if (!selectedDate.value) return null
-  const key = toKey(selectedDate.value.getFullYear(), selectedDate.value.getMonth(), selectedDate.value.getDate())
-  const entry = diariesByDate.value[key]
-  if (!entry) return null
-  const moodMap = {
-    great: '아주 좋음', good: '좋음', normal: '보통', bad: '나쁨', terrible: '아주 나쁨'
-  }
-  return { ...entry, moodLabel: moodMap[entry.mood] || entry.mood }
-})
-
-// exercise list for selected date
-const exerciseRecords = computed(() => {
-  if (!selectedDate.value) return []
-  const key = toKey(selectedDate.value.getFullYear(), selectedDate.value.getMonth(), selectedDate.value.getDate())
-  const rec = exerciseByDate.value[key]?.records || []
-  return Array.isArray(rec) ? rec : []
-})
-
-function openDiary(){
-  if (!selectedDate.value) return
   const key = toKey(
     selectedDate.value.getFullYear(),
     selectedDate.value.getMonth(),
     selectedDate.value.getDate()
   )
+  const entry = diariesByDate.value[key]
+  if (!entry) return null
+  const moodMap = {
+    great: '아주 좋음',
+    good: '좋음',
+    normal: '보통',
+    bad: '나쁨',
+    terrible: '아주 나쁨'
+  }
+  return { ...entry, moodLabel: moodMap[entry.mood] || entry.mood }
+})
+
+const exerciseRecords = computed(() => {
+  if (!selectedDate.value) return []
+  const key = toKey(
+    selectedDate.value.getFullYear(),
+    selectedDate.value.getMonth(),
+    selectedDate.value.getDate()
+  )
+  const rec = exerciseByDate.value[key]?.records || []
+  return Array.isArray(rec) ? rec : []
+})
+
+function getSelectedDateKey() {
+  if (!selectedDate.value) return null
+  return toKey(
+    selectedDate.value.getFullYear(),
+    selectedDate.value.getMonth(),
+    selectedDate.value.getDate()
+  )
+}
+
+function goDiet() {
+  const key = getSelectedDateKey()
+  if (!key) return
+  router.push({
+    path: '/main/dietmanagement', 
+    query: { date: key }
+  })
+}
+
+function goExercise() {
+  const key = getSelectedDateKey()
+  if (!key) return
+  router.push({
+    path: '/main/exerciseRecords', 
+    query: { date: key }
+  })
+}
+
+function openDiary() {
+  if (!selectedDate.value) return
+  const key = getSelectedDateKey()
   router.push({ name: 'main-diary-done', query: { date: key } })
 }
 </script>
@@ -371,6 +482,23 @@ function openDiary(){
 .badge { background: #f3f4f6; color: #374151; border-radius: 8px; padding: 2px 6px; font-size: 12px; margin-left: 4px; }
 .j-notes { margin-top: 6px; color: #374151; }
 .j-empty { color: #9ca3af; }
+
+.summary.clickable {
+  cursor: pointer;
+}
+
+.summary.clickable:hover {
+  background-color: #f9fafb;
+}
+
+.workout {
+  cursor: pointer;
+}
+
+.workout:hover {
+  background-color: #f9fafb;
+}
+
 
 @media (max-width: 980px) {
   .cols { grid-template-columns: 1fr; }

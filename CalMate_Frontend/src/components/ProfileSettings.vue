@@ -13,7 +13,7 @@
           class="input"
           type="password"
           v-model="curr"
-          @blur="validate('current')"
+          @blur="validatePassword()"
           placeholder="현재 비밀번호"
           autocomplete="current-password"
         />
@@ -30,7 +30,7 @@
           type="password"
           v-model="nextPwd"
           @blur="validate('next')"
-          placeholder="최소 8자, 문자+숫자 포함 권장"
+          placeholder="최소 6자 이상 권장"
           autocomplete="new-password"
         />
         <p class="msg"><span class="error" v-if="err.next">{{ err.next }}</span></p>
@@ -68,6 +68,10 @@
 
 <script setup>
 import { computed, reactive, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import api from '@/lib/api'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore();
 
 const props = defineProps({
   open: { type: Boolean, default: false }
@@ -85,12 +89,33 @@ const err = reactive({
   confirm: ''
 })
 
+const pwRegex =
+  /.{6,}$/ // 6자 이상, 영문+숫자 1개 이상
+
+async function validatePassword() {
+  if (!curr.value) err.current = '최소 6자 이상이어야 합니다.'
+  else if (!pwRegex.test(curr.value))
+    err.current = '6자리 이상 입력 해 주세요.'
+  else if (pwRegex.test(curr.value)) {
+      try {
+          const response = await api.post('/member/password-info',
+            {
+                "id"       : userStore.userId,
+                "password" : curr.value
+            }
+          );
+          err.current = ''
+      } catch(e) {
+          console.log(e)
+          err.current = '비밀번호가 틀렸습니다.'
+      }
+  }    
+}
+
 function validate(key) {
-  if (key === 'current') {
-    err.current = curr.value ? '' : '현재 비밀번호를 입력하세요.'
-  } else if (key === 'next') {
+  if (key === 'next') {
     if (!nextPwd.value) err.next = '새 비밀번호를 입력하세요.'
-    else if (nextPwd.value.length < 8) err.next = '최소 8자 이상이어야 합니다.'
+    else if (nextPwd.value.length < 6) err.next = '최소 6자 이상이어야 합니다.'
     else err.next = ''
     if (confirm.value) validate('confirm')
   } else if (key === 'confirm') {

@@ -6,7 +6,6 @@
         <h1 class="hello__title">안녕하세요, {{ userStore.name }} 님</h1>
         <p class="hello__sub">오늘도 건강한 하루 되세요</p>
       </div>
-      <!-- 문의하기 버튼: QnA 자식 라우트로 이동 -->
       <button
         class="ghost-btn"
         type="button"
@@ -18,10 +17,10 @@
 
     <!-- KPI 카드 -->
     <section class="kpis">
-      <KpiCard icon="🥗" label="섭취" value="165" unit="kcal" />
-      <KpiCard icon="🔥" label="소모" value="210" unit="kcal" />
-      <KpiCard icon="🎯" label="목표" value="2095" unit="kcal" />
-      <KpiCard icon="💜" label="남은 칼로리" value="2140" unit="kcal" />
+      <KpiCard icon="🥗" label="섭취" :value="todayIntakeKcal" unit="kcal" />
+      <KpiCard icon="🔥" label="소모" :value="todayBurnKcal" unit="kcal" />
+      <KpiCard icon="🎯" label="오늘의 칼로리" :value="netKcal" unit="kcal" />
+      <KpiCard icon="🎯" label="목표" :value="goalKcal" unit="kcal" />
     </section>
 
     <!-- AI 코치 카드 -->
@@ -49,7 +48,7 @@
           <h2 class="card__title">오늘의 칼로리</h2>
         </header>
         <DonutGauge
-          :percent="(Math.abs(netKcal) / goalKcal) * 100"
+          :percent="goalKcal ? Math.max((netKcal / goalKcal) * 100, 0) : 0"
           :main="netKcal"
           :sub="`/ ${goalKcal}`"
         />
@@ -60,9 +59,9 @@
         <header class="card__header">
           <h2 class="card__title">영양소 섭취</h2>
         </header>
-        <ProgressBar label="단백질" :value="31" :max="90" unit="g" />
-        <ProgressBar label="탄수화물" :value="60" :max="250" unit="g" />
-        <ProgressBar label="지방" :value="4" :max="58" unit="g" />
+        <ProgressBar label="단백질" :value="todayProtein" :max="90" unit="g" />
+        <ProgressBar label="탄수화물" :value="todayCarb" :max="250" unit="g" />
+        <ProgressBar label="지방" :value="todayFat" :max="58" unit="g" />
       </article>
     </section>
 
@@ -92,8 +91,8 @@
       <header class="card__header">
         <h2 class="card__title">오늘의 활동</h2>
       </header>
-      <ProgressBar label="식사 기록" :value="2" :max="3" unit="회" :long="true" />
-      <ProgressBar label="운동 시간" :value="50" :max="60" unit="분" :long="true" />
+      <ProgressBar label="식사 기록" :value="todayMealCount" :max="3" unit="회" :long="true" />
+      <ProgressBar label="운동 시간" :value="todayExerciseMinutes" :max="60" unit="분" :long="true" />
     </section>
 
     <!-- 식사 추천 -->
@@ -128,27 +127,103 @@
       />
     </section>
 
-    <!-- QnA 등 dashboard 자식 라우트 렌더링 영역 -->
     <router-view />
   </section>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import DonutGauge from '@/components/DonutGauge.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import KpiCard from '@/components/KpiCard.vue'
 import MealCard from '@/components/MealCard.vue'
 import { useUserStore } from '@/stores/user'
 import api from '@/lib/api'
+import { fetchExerciseRecords } from '@/api/exerciseRecords'
+import { getDietByType } from '@/api/diet'
 
 const userStore = useUserStore()
 
-const netKcal = computed(() => 650)
-const goalKcal = 2095
+const MEAL_TYPES = ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK']
+const todayStr = new Date().toISOString().slice(0, 10)
 
-api.get('/health').catch(() => {
-  // 필요 시 에러 처리
+const todayIntakeKcal = ref(0)
+const todayBurnKcal = ref(0)
+
+const todayProtein = ref(0)
+const todayCarb = ref(0)
+const todayFat = ref(0)
+
+const todayMealCount = ref(0)
+const todayExerciseMinutes = ref(0)
+
+const goalKcal = computed(() => Number(userStore.bodyMetric || 0))
+const netKcal = computed(() => todayIntakeKcal.value - todayBurnKcal.value)
+
+const loadTodayStats = async () => {
+  if (!userStore.userId) return
+
+  try {
+    const dietResponses = await Promise.all(
+      MEAL_TYPES.map((type) =>
+        getDietByType({
+          date: todayStr,
+          type,
+          memberId: userStore.userId,
+        })
+      )
+    )
+    const dietList = dietResponses.flatMap((r) => r.data || [])
+
+    const intake = dietList.reduce((sum, item) => {
+      const kcalFromFood = Number(item?.food?.kcal ?? 0)
+      const kcalDirect = Number(item?.kcal ?? 0)
+      const kcal = kcalFromFood > 0 ? kcalFromFood : kcalDirect
+      return sum + (isNaN(kcal) ? 0 : kcal)
+    }, 0)
+    todayIntakeKcal.value = intake
+
+    todayProtein.value = dietList.reduce(
+      (sum, item) => sum + (Number(item?.food?.protein) || 0),
+      0
+    )
+    todayCarb.value = dietList.reduce(
+      (sum, item) => sum + (Number(item?.food?.carbo) || 0),
+      0
+    )
+    todayFat.value = dietList.reduce(
+      (sum, item) => sum + (Number(item?.food?.fat) || 0),
+      0
+    )
+
+    todayMealCount.value = dietList.length
+
+    const { data: exerciseList = [] } = await fetchExerciseRecords({
+      memberId: userStore.userId,
+      date: todayStr,
+    })
+    const list = Array.isArray(exerciseList) ? exerciseList : []
+
+    const burn = list.reduce((sum, r) => sum + (Number(r.burnedKcal) || 0), 0)
+    todayBurnKcal.value = burn
+
+    const minutes = list.reduce((sum, r) => sum + (Number(r.min ?? r.minutes) || 0), 0)
+    todayExerciseMinutes.value = minutes
+  } catch (e) {
+    console.error('대시보드 오늘 통계 조회 실패', e)
+    todayIntakeKcal.value = 0
+    todayBurnKcal.value = 0
+    todayProtein.value = 0
+    todayCarb.value = 0
+    todayFat.value = 0
+    todayMealCount.value = 0
+    todayExerciseMinutes.value = 0
+  }
+}
+
+onMounted(() => {
+  loadTodayStats()
+  api.get('/health').catch(() => {})
 })
 </script>
 

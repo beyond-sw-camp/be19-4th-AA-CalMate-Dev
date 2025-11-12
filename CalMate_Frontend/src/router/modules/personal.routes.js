@@ -81,6 +81,23 @@ export default [
         name: 'main-point', 
         component: () => import('@/views/defaultPage/Points.vue'), 
       },
+      {
+        path: 'ai',
+        name: 'ai-tab', 
+        component: () => import('@/views/aiPage/AiTab.vue'),
+        children: [
+          {
+            path: 'diet',
+            name: 'ai-diet',
+            component: () => import('@/components/ai/AiDietPlan.vue'),
+          },
+          {
+            path: 'exercise',
+            name: 'ai-exercise',
+            component: () => import('@/components/ai/AiExercisePlan.vue'),
+          },
+        ] 
+      }
     ],
   },
 ]

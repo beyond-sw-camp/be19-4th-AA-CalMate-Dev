@@ -31,6 +31,11 @@
       <!-- 오른쪽: KPI + 비밀번호 변경 버튼 -->
       <div class="hero__right">
         <div class="kpi">
+          <p class="kpi__label">포인트</p>
+          <p class="kpi__value">{{ form.point }} 점</p>
+          <!-- <p class="kpi__unit">kg</p> -->
+        </div>
+        <div class="kpi">
           <p class="kpi__label">목표</p>
           <p class="kpi__value">체중 감량</p>
         </div>
@@ -89,14 +94,6 @@
             <input disabled class="input" type="text"  v-model="form.gender" @blur="v('gender')" />
             <p class="msg"><span class="error" v-if="errors.gender">{{ errors.gender }}</span></p>
         </div>
-
-      </div>
-    </section>
-
-    <!-- ================== 신체 정보 카드 ================== -->
-    <section class="card">
-      <h2 class="card__title">신체 정보</h2>
-      <div class="grid-2">
         <!-- 키 -->
         <div class="field">
           <label class="label">키 (cm)</label>
@@ -106,36 +103,45 @@
 
         <!-- 체중 -->
         <div class="field">
-          <label class="label">체중 (kg)</label>
+          <label class="label">현재 체중 (kg)</label>
           <input class="input" type="number" placeholder="75" v-model.number="form.weight" @blur="v('weight')" min="20" max="400" step="0.1" />
           <p class="msg"><span class="error" v-if="errors.weight">{{ errors.weight }}</span></p>
         </div>
 
-        <!-- 활동량 -->
-        <div class="field span-2">
-          <label class="label">활동량</label>
-          <div class="input select">
-            <select v-model="form.activity" @blur="v('activity')">
-              <option value="">활동량 선택</option>
-              <option :value="1.2">거의 활동 없음</option>
-              <option :value="1.375">가벼운 활동(주 1~3회)</option>
-              <option :value="1.55">보통 활동(주 3~5회)</option>
-              <option :value="1.725">높은 활동(주 6~7회)</option>
-              <option :value="1.9">매우 높은 활동</option>
-            </select>
-            <span class="arrow">▾</span>
+
+      </div>
+    </section>
+
+    <!-- ================== 목표 카드 ================== -->
+    <section class="card">
+      <h2 class="card__title">목표</h2>
+      <div class="grid-2">
+        
+        <!-- 목표일 -->
+        <div class="field">
+          <label class="label">목표일</label>
+          <div class="input with-icon">
+            <span class="ico">📅</span>
+            <input class="plain" type="date" v-model="form.endDate" @blur="v('birth')" />
           </div>
-          <p class="msg"><span class="error" v-if="errors.activity">{{ errors.activity }}</span></p>
+          <p class="msg"></p>
+        </div>
+
+        <!-- 목표 체중 -->
+        <div class="field">
+          <label class="label">목표 체중 (kg)</label>
+          <input class="input" type="number" placeholder="75" v-model.number="form.targetValue" @blur="v('weight')" min="20" max="400" step="0.1" />
+          <p class="msg"><span class="error" v-if="errors.weight">{{ errors.weight }}</span></p>
         </div>
 
         <!-- 목표 -->
         <div class="field">
           <label class="label">목표</label>
           <div class="input select">
-            <select v-model="form.goal">
-              <option value="lose">체중 감량</option>
-              <option value="keep">체중 유지</option>
-              <option value="gain">체중 증량</option>
+            <select v-model="form.goalType">
+              <option value="LOSS">체중 감량</option>
+              <option value="MAINTAIN">체중 유지</option>
+              <option value="INCREASE">체중 증량</option>
             </select>
             <span class="arrow">▾</span>
           </div>
@@ -150,6 +156,8 @@
           </div>
           <p class="msg"></p>
         </div>
+
+        
 
         <!-- BMR -->
         <div class="field span-2">
@@ -182,42 +190,85 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed , onMounted} from 'vue'
 import PasswordChangeModal from '@/components/ProfileSettings.vue'
 import { useUserStore } from '@/stores/user'
+import api from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
-const userStroe = useUserStore();
+const {success , error, info} = useToast();
+
+const userStore = useUserStore();
 
 /* 비밀번호 변경 모달 */
 const pwdModalOpen = ref(false)
 async function changePassword({ current, next }){
-  // TODO: await api.post('/change-password', { current, next })
-  alert(`비밀번호 변경\n현재: ${current}\n새: ${next}`)
+  try{
+      const response =  await api.post('/member/member-password', { 
+          id : userStore.userId,
+          newPassword: next, 
+          oldPassword: current
+        })
+
+    if(response.data.httpStatus === 200 )
+      success('비밀번호 변경', {description: '비밀번호 변경 완료'});
+  } catch(e) {
+    console.log(e);
+    error('비밀번호 변경', {description: '비밀번호 변경 실패'})
+  }
 }
+
+onMounted(async() =>{
+  try{
+    const tasks = [];
+    tasks.push(await api.get(`/member/goal/${userStore.userId}`)); // 골 (목표)
+    tasks.push(await api.get(`/member/member-info/${userStore.userId}`)); //회원정보
+
+    
+    // ② 모든 요청이 끝날 때까지 기다림 (모두 끝나면 배열로 반환됨)
+    const resAll = await Promise.all([...tasks]);
+    form.point = resAll[1].data.point;
+    const goalData = resAll[0].data.result.goalData;
+
+    form.endDate = goalData.endDate.substring(0, 10);
+    form.goalType = goalData.goalType;
+    form.targetValue = goalData.targetValue;
+
+
+    
+  } catch (e){
+    console.log(e)
+  }
+})
 
 /* ---------------- 폼 상태 ---------------- */
 const form = reactive({
-  name: '',
-  nickname: '',
-  phone: '',
-  birth: '',
-  gender: '',
-  birthYear: 1990,
-  height: 175,
-  weight: 75,
+  name: userStore.name,
+  nickname: userStore.nickname,
+  phone: userStore.phone,
+  gender: userStore.gender,
+  birth: userStore.birth,
+  height: userStore.height,
+  weight: userStore.weight,
   activity: 1.55,
   goal: 'lose',
-  bmr: null
+  bmr: null,
+  point : 0,
+
+  endDate:'',
+  goalType:'',
+  targetValue: 0,
+
 })
 
-form.name = userStroe.name;
-form.nickname = userStroe.nickname;
-form.phone = userStroe.phone;
-form.birth = userStroe.birth;
-form.gender = userStroe.gender;
-form.height = userStroe.height;
-form.weight = userStroe.weight;
-form.bmr = userStroe.bodyMetric;
+// form.name = userStore.name;
+// form.nickname = userStore.nickname;
+// form.phone = userStore.phone;
+// form.birth = userStore.birth;
+// form.gender = userStore.gender;
+// form.height = userStore.height;
+// form.weight = userStore.weight;
+// form.bmr = userStore.bodyMetric;
 
 /* ------------- 에러(고정 높이 영역에 표시) ------------- */
 const errors = reactive({
@@ -226,19 +277,59 @@ const errors = reactive({
 })
 
 /* ------------- 아바타 업로드 ------------- */
-const fileInput = ref(null)
-const avatarUrl = ref('')   // 미리보기 URL
-avatarUrl.value = userStroe.profile;
+const fileInput = ref(null);
+const avatarUrl = ref('');   // 미리보기 URL
+avatarUrl.value = userStore.profile;
 function openFilePicker(){ fileInput.value?.click() }
-function onSelectAvatar(e){
-  const f = e.target.files?.[0]
-  if(!f) return
-  // 간단한 용량/타입 체크(선택)
-  if(!f.type.startsWith('image/')) return alert('이미지 파일만 선택해주세요.')
-  // 미리보기 갱신
-  avatarUrl.value = URL.createObjectURL(f)
-  console.log(avatarUrl.value);
-  // TODO: 서버 업로드 필요 시 FormData로 업로드
+
+async function onSelectAvatar(e){
+  const input = e.target
+  const file = input.files?.[0]
+  input.value = '' // 같은 파일 다시 선택 가능하게 초기화
+
+  if (!file) return
+  if (!file.type.startsWith('image/')) return alert('이미지 파일만 업로드 가능해요.')
+  if (file.size > 5 * 1024 * 1024) return alert('5MB 이하만 업로드 가능합니다.')
+
+  try {
+    // uploading.value = true
+    const form = new FormData()
+    form.append('singleFile', file)
+
+    const res = await api.post(`/member/Profile/${userStore.userId}`,
+      form,
+      {
+      }
+    )
+
+    const { httpStatus, result } = res.data ?? {}
+    const { responseData } = result ?? {}
+    const {
+      urlPath,
+      successUpload,
+      dirPath,
+      filePath,
+      exceptionMessage,
+    } = responseData ?? {}
+
+    console.log('업로드 응답:', { httpStatus, successUpload, urlPath, dirPath, filePath, exceptionMessage })
+
+    if (httpStatus !== 200 || !successUpload || !urlPath) {
+      alert('프로필 변경 실패: ' + (exceptionMessage || '알 수 없는 오류'))
+      return
+    }
+
+    userStore.changeProfile('');
+    setTimeout(async() => {
+      await userStore.changeProfile(urlPath)
+      avatarUrl.value = urlPath;
+    },300)
+  } catch (err) {
+    console.error(err)
+    alert('업로드 실패 :' , err)
+  } finally {
+    // uploading.value = false
+  }
 }
 
 /* ------------- 검증 규칙 ------------- */

@@ -18,9 +18,6 @@
           </p>
 
           <div class="actions">
-            <button class="icon-btn" type="button">
-              <img :src="uploadIcon" alt="공유" class="icon-img" />
-            </button>
             <button
               class="icon-btn"
               type="button"
@@ -57,10 +54,8 @@
 </template>
 
 <script setup>
-import uploadIcon from '@/assets/images/exerciseRecords/upload.png'
 import deleteIcon from '@/assets/images/delete.png'
 import editIcon from '@/assets/images/edit.png'
-import exampleImage from '@/assets/images/exerciseRecords/exerciseexample.png'
 
 defineProps({
   records: {
