@@ -2,23 +2,23 @@ package com.ateam.calmate.community.command.service;
 
 import com.ateam.calmate.community.command.dto.PostCreateRequestDTO;
 import com.ateam.calmate.community.command.dto.PostUpdateRequestDTO;
-import com.ateam.calmate.community.command.entity.CommunityPointLog;
-import com.ateam.calmate.community.command.entity.PostExtendFilePath;
-import com.ateam.calmate.community.command.entity.Post;
-import com.ateam.calmate.community.command.entity.PostFile;
+import com.ateam.calmate.community.command.entity.*;
 import com.ateam.calmate.community.command.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PostCommandService {
 
     private final PostRepository postRepository;
@@ -30,12 +30,13 @@ public class PostCommandService {
     @Transactional
     public void createPost(PostCreateRequestDTO dto) {
 
-//        // ✅ 첫 요청 방어: title/content/memberId가 null이면 무시
-//        if (dto.getMemberId() == null || dto.getTitle() == null || dto.getContent() == null) {
-//            System.out.println("⚠️ 비정상 요청 감지 (첫 요청 방어) → 포인트 반영 안 함");
-//            return;
-//        }
-        System.out.println("개시글 등록 service 시작");
+        // ✅ 첫 요청 방어: title/content/memberId가 null이면 무시
+        if (dto.getMemberId() == null || dto.getTitle() == null || dto.getContent() == null) {
+            System.out.println("⚠️ 비정상 요청 감지 (첫 요청 방어) → 포인트 반영 안 함");
+            return;
+        }
+
+        // 게시글 저장
         Post post = Post.builder()
                 .title(dto.getTitle())
                 .content(dto.getContent())
@@ -46,7 +47,7 @@ public class PostCommandService {
 
         Post savedPost = postRepository.save(post);
 
-        // 🔥 여러 개 저장
+        // 이미지 여러 개 저장
         if (dto.getImages() != null) {
             dto.getImages().forEach(img -> saveImage(img, savedPost.getId()));
         }
@@ -54,10 +55,16 @@ public class PostCommandService {
         // 포인트 +10 적립(member 테이블에 +10 추가)
         communityPointRepository.findById(dto.getMemberId())
                 .ifPresent(member -> {
+//                    log.info("UPDATE 람다식 확인");
                     int currentPoint = member.getPoint() == null ? 0 : member.getPoint();
                     member.setPoint(currentPoint + 10);
-//                    communityPointRepository.save(member);  // ✅ 추가 (중복 flush 방지)
                 });
+//        CommunityMember selected = communityPointRepository.findById(dto.getMemberId()).get();
+//        log.info("UPDATE 전 람다식 확인: {}", selected.getPoint());
+//        int currentPoint = selected.getPoint() == null ? 0 : selected.getPoint();
+//        selected.setPoint(currentPoint + 10);
+//        log.info("UPDATE 후 람다식 확인: {}", selected.getPoint());
+//                    communityPointRepository.save(member);  // ✅ 추가 (중복 flush 방지)
 
         // 4️⃣ 포인트 로그 기록 (point 테이블)
         CommunityPointLog pointLog = CommunityPointLog.builder()
@@ -66,6 +73,11 @@ public class PostCommandService {
                 .reason("Community")
                 .memberId(dto.getMemberId().longValue())
                 .build();
+//        CommunityPointLog pointLog = new CommunityPointLog(10,
+//                CommunityPointLog.Distinction.EARN,
+//                "Community",
+//                dto.getMemberId().longValue()
+//                );
         communityPointLogRepository.save(pointLog);
 
     }

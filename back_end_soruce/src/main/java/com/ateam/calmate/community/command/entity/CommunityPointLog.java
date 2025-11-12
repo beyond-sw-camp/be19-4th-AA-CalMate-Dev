@@ -37,8 +37,14 @@ public class CommunityPointLog {
         if (historyTime == null) {
             historyTime = LocalDateTime.now();
         }
-        System.out.println("로컬데이터시간");
     }
+
+//    public CommunityPointLog(Integer point, Distinction distinction, String reason, Long memberId) {
+//        this.point = point;
+//        this.distinction = distinction;
+//        this.reason = reason;
+//        this.memberId = memberId;
+//    }
 
     public enum Distinction {
         EARN, USE
