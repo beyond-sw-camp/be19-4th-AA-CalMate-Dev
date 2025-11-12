@@ -100,6 +100,10 @@ async function signIn() {
     
     const { httpStatus, message,  result } = response.data;
     
+    result.user.profilePath = api.defaults.baseURL + result.user.profilePath;
+
+    console.log('result.user.profile::::',result.user.profile);
+
     console.log('user:\n',result.user);
     userStore.setToken(token);
     userStore.logIn(result.user);

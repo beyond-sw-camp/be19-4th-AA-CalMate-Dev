@@ -79,7 +79,7 @@ import mainIcon from '../assets/images/mainIcon.png'
 import communityIcon from '../assets/images/header/community.png'
 import pointIcon from '../assets/images/header/point.png'
 import logoutIcon from '../assets/images/header/logout.png'
-import ModalLogoutConfirm from '@/components/ModalLogoutConfirm.vue'
+import ModalLogoutConfirm from '@/components/ModalConfirm.vue'
 
 const userStore = useUserStore()
 
