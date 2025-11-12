@@ -76,7 +76,7 @@ public class WebSecurity {
 //                                        /* ③ 로그인된 회원만 접근 가능 (authenticated) --------- */
                                         .requestMatchers("/member/refresh").permitAll()
                                         .requestMatchers("/member/logout").permitAll()
-//                                        .requestMatchers(HttpMethod.GET, "/img/**").permitAll()     // 이미지 경로는 누구나 접근 허용
+                                        .requestMatchers(HttpMethod.GET, "/img/**").permitAll()     // 이미지 경로는 누구나 접근 허용
                                         .requestMatchers("/health").permitAll()
 //                                        .requestMatchers(
 //                                                "/v3/api-docs/**",
