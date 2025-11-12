@@ -43,8 +43,6 @@ public class MemberServiceImpl implements MemberService {
     private final MemberAuthorityRepository memberAuthorityRepository;
     private final BaseOfPointRepository baseOfPointRepository;
     private final PointRepository pointRepository;
-
-
     private final PasswordEncoder passwordEncoder;  //평문과 암호화 된 다이제스트를 비교하기 위한 도구
 
     @Autowired
