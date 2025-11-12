@@ -26,7 +26,10 @@
               v-model="form.kcal"
               type="text"
               class="field-input"
-              placeholder="예: 300"
+              placeholder="예: 300.5"
+              @input="e => handleNumericInput('kcal', e)"
+              @compositionstart="onCompositionStart"
+              @compositionend="e => onCompositionEnd('kcal', e)"
             />
           </div>
           <div class="field">
@@ -36,6 +39,9 @@
               type="text"
               class="field-input"
               placeholder="예: 5.6"
+              @input="e => handleNumericInput('protein', e)"
+              @compositionstart="onCompositionStart"
+              @compositionend="e => onCompositionEnd('protein', e)"
             />
           </div>
         </div>
@@ -47,7 +53,10 @@
               v-model="form.carb"
               type="text"
               class="field-input"
-              placeholder="예: 66"
+              placeholder="예: 66.3"
+              @input="e => handleNumericInput('carb', e)"
+              @compositionstart="onCompositionStart"
+              @compositionend="e => onCompositionEnd('carb', e)"
             />
           </div>
           <div class="field">
@@ -57,6 +66,9 @@
               type="text"
               class="field-input"
               placeholder="예: 0.5"
+              @input="e => handleNumericInput('fat', e)"
+              @compositionstart="onCompositionStart"
+              @compositionend="e => onCompositionEnd('fat', e)"
             />
           </div>
         </div>
@@ -68,7 +80,6 @@
           </div>
 
           <div class="image-box">
-            <!-- 여기만 변경: form.previews 존재 여부 먼저 체크 -->
             <div
               v-if="!(form.previews && form.previews.length)"
               class="placeholder"
@@ -113,87 +124,75 @@ import { reactive, ref } from 'vue'
 import closeIcon from '@/assets/images/close.png'
 
 const props = defineProps({
-  foodData: {
-    type: Object,
-    default: null
-  }
+  foodData: { type: Object, default: null },
 })
 
 const emit = defineEmits(['close', 'save'])
 const fileInput = ref(null)
+const isComposing = ref(false)
 
-// 기존 이미지: [{ id, url }, ...]
+// 기존 이미지
 const originalImages = ref(
-  props.foodData && Array.isArray(props.foodData.images)
-    ? props.foodData.images.map(img => ({ ...img }))
-    : []
+  props.foodData?.images?.map(img => ({ ...img })) || []
 )
-
-// 처음에는 기존 이미지 id 전부 유지
 const keepFileIds = ref(originalImages.value.map(img => img.id))
 
 const form = reactive({
   name: props.foodData?.name || '',
-  kcal:
-    props.foodData && (props.foodData.kcal || props.foodData.kcal === 0)
-      ? String(props.foodData.kcal)
-      : '',
-  protein:
-    props.foodData && (props.foodData.protein || props.foodData.protein === 0)
-      ? String(props.foodData.protein)
-      : '',
-  carb:
-    props.foodData && (props.foodData.carb || props.foodData.carb === 0)
-      ? String(props.foodData.carb)
-      : '',
-  fat:
-    props.foodData && (props.foodData.fat || props.foodData.fat === 0)
-      ? String(props.foodData.fat)
-      : '',
-  // 항상 배열이 되도록 초기화
+  kcal: props.foodData?.kcal != null ? String(props.foodData.kcal) : '',
+  protein: props.foodData?.protein != null ? String(props.foodData.protein) : '',
+  carb: props.foodData?.carb != null ? String(props.foodData.carb) : '',
+  fat: props.foodData?.fat != null ? String(props.foodData.fat) : '',
   previews: originalImages.value.map(img => img.url),
-  files: []
+  files: [],
 })
 
 const imagesTouched = ref(false)
 
 const onClose = () => emit('close')
-
 const openFileDialog = () => fileInput.value?.click()
 
 const onFileChange = e => {
   const files = Array.from(e.target.files || [])
   if (!files.length) return
-
   imagesTouched.value = true
-
   files.forEach(f => {
     form.files.push(f)
     form.previews.push(URL.createObjectURL(f))
   })
-
   e.target.value = ''
 }
 
 const removePreview = i => {
   imagesTouched.value = true
-
-  // 화면에서 제거
   form.previews.splice(i, 1)
-
   const originalCount = originalImages.value.length
-
   if (i < originalCount) {
-    // 기존 이미지 삭제 → 유지 목록에서 해당 id 제거
     originalImages.value.splice(i, 1)
     keepFileIds.value = originalImages.value.map(img => img.id)
   } else {
-    // 새로 추가한 파일 삭제
     const fileIndex = i - originalCount
     if (fileIndex >= 0 && fileIndex < form.files.length) {
       form.files.splice(fileIndex, 1)
     }
   }
+}
+
+const onCompositionStart = () => {
+  isComposing.value = true
+}
+const onCompositionEnd = (field, e) => {
+  isComposing.value = false
+  handleNumericInput(field, e)
+}
+
+const handleNumericInput = (field, e) => {
+  if (isComposing.value) return
+  const value = e.target.value || ''
+  const sanitized = value
+    .replace(/[^0-9.]/g, '') // 숫자, 점 외 제거
+    .replace(/(\..*)\./g, '$1') // 점 2개 이상 방지
+  form[field] = sanitized
 }
 
 const onSubmit = () => {
@@ -211,7 +210,7 @@ const onSubmit = () => {
     previews: form.previews,
     files: form.files,
     imagesTouched: imagesTouched.value,
-    keepFileIds: keepFileIds.value
+    keepFileIds: keepFileIds.value,
   })
   emit('close')
 }

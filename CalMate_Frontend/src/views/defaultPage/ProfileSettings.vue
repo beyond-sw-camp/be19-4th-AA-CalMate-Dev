@@ -185,8 +185,12 @@
 import { reactive, ref, computed } from 'vue'
 import PasswordChangeModal from '@/components/ProfileSettings.vue'
 import { useUserStore } from '@/stores/user'
+import api from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
-const userStroe = useUserStore();
+const {success , error, info} = useToast();
+
+const userStore = useUserStore();
 
 /* 비밀번호 변경 모달 */
 const pwdModalOpen = ref(false)
@@ -210,14 +214,14 @@ const form = reactive({
   bmr: null
 })
 
-form.name = userStroe.name;
-form.nickname = userStroe.nickname;
-form.phone = userStroe.phone;
-form.birth = userStroe.birth;
-form.gender = userStroe.gender;
-form.height = userStroe.height;
-form.weight = userStroe.weight;
-form.bmr = userStroe.bodyMetric;
+form.name = userStore.name;
+form.nickname = userStore.nickname;
+form.phone = userStore.phone;
+form.birth = userStore.birth;
+form.gender = userStore.gender;
+form.height = userStore.height;
+form.weight = userStore.weight;
+form.bmr = userStore.bodyMetric;
 
 /* ------------- 에러(고정 높이 영역에 표시) ------------- */
 const errors = reactive({
@@ -228,17 +232,57 @@ const errors = reactive({
 /* ------------- 아바타 업로드 ------------- */
 const fileInput = ref(null)
 const avatarUrl = ref('')   // 미리보기 URL
-avatarUrl.value = userStroe.profile;
+avatarUrl.value = userStore.profile;
 function openFilePicker(){ fileInput.value?.click() }
-function onSelectAvatar(e){
-  const f = e.target.files?.[0]
-  if(!f) return
-  // 간단한 용량/타입 체크(선택)
-  if(!f.type.startsWith('image/')) return alert('이미지 파일만 선택해주세요.')
-  // 미리보기 갱신
-  avatarUrl.value = URL.createObjectURL(f)
-  console.log(avatarUrl.value);
-  // TODO: 서버 업로드 필요 시 FormData로 업로드
+
+async function onSelectAvatar(e){
+  const input = e.target
+  const file = input.files?.[0]
+  input.value = '' // 같은 파일 다시 선택 가능하게 초기화
+
+  if (!file) return
+  if (!file.type.startsWith('image/')) return alert('이미지 파일만 업로드 가능해요.')
+  if (file.size > 5 * 1024 * 1024) return alert('5MB 이하만 업로드 가능합니다.')
+
+  try {
+    // uploading.value = true
+    const form = new FormData()
+    form.append('singleFile', file)
+
+    const res = await api.post(`/member/Profile/${userStore.userId}`,
+      form,
+      {
+      }
+    )
+
+    const { httpStatus, result } = res.data ?? {}
+    const { responseData } = result ?? {}
+    const {
+      urlPath,
+      successUpload,
+      dirPath,
+      filePath,
+      exceptionMessage,
+    } = responseData ?? {}
+
+    console.log('업로드 응답:', { httpStatus, successUpload, urlPath, dirPath, filePath, exceptionMessage })
+
+    if (httpStatus !== 200 || !successUpload || !urlPath) {
+      alert('프로필 변경 실패: ' + (exceptionMessage || '알 수 없는 오류'))
+      return
+    }
+
+    userStore.changeProfile('');
+    setTimeout(async() => {
+      await userStore.changeProfile(urlPath)
+      avatarUrl.value = urlPath;
+    },300)
+  } catch (err) {
+    console.error(err)
+    alert('업로드 실패 :' , err)
+  } finally {
+    // uploading.value = false
+  }
 }
 
 /* ------------- 검증 규칙 ------------- */

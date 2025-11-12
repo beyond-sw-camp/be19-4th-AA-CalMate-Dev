@@ -43,6 +43,7 @@
       @edit="editRecord"
     />
 
+    <!-- 운동 입력 모달 -->
     <ExerciseRecordModal
       :visible="isModalOpen"
       :initial-data="editingData"
@@ -50,6 +51,15 @@
       @close="closeModal"
       @save="saveRecord"
     />
+
+    <!-- ✅ 포인트 적립 모달 -->
+    <div v-if="showPointModal" class="point-modal-overlay">
+      <div class="point-modal-box">
+        <h3>🎉 5포인트가 적립되었습니다!</h3>
+        <p>운동 기록 보상이에요 💪</p>
+        <button class="point-modal-btn" @click="closePointModal">확인</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -117,10 +127,10 @@ const selectedDateLabel = computed(() => {
 })
 
 const records = ref([])
-
 const isModalOpen = ref(false)
 const editingId = ref(null)
 const editingData = ref(null)
+const showPointModal = ref(false)
 
 const loadRecords = async () => {
   try {
@@ -154,13 +164,8 @@ const loadRecords = async () => {
   }
 }
 
-onMounted(() => {
-  loadRecords()
-})
-
-watch(selectedDateStr, () => {
-  loadRecords()
-})
+onMounted(loadRecords)
+watch(selectedDateStr, loadRecords)
 
 const openModal = () => {
   editingId.value = null
@@ -172,6 +177,10 @@ const closeModal = () => {
   isModalOpen.value = false
   editingId.value = null
   editingData.value = null
+}
+
+const closePointModal = () => {
+  showPointModal.value = false
 }
 
 const saveRecord = async (payload) => {
@@ -202,6 +211,9 @@ const saveRecord = async (payload) => {
         kcal: payload.kcal,
         files: payload.files,
       })
+
+      // ✅ 기록할 때마다 무조건 포인트 모달 표시
+      showPointModal.value = true
     }
 
     await loadRecords()
@@ -225,7 +237,6 @@ const deleteRecord = async (id) => {
 const editRecord = (id) => {
   const target = records.value.find((r) => r.id === id)
   if (!target) return
-
   editingId.value = id
   editingData.value = {
     type: target.type,
@@ -240,11 +251,9 @@ const editRecord = (id) => {
 const totalMinutes = computed(() =>
   records.value.reduce((sum, r) => sum + (Number(r.minutes) || 0), 0),
 )
-
 const totalKcal = computed(() =>
   records.value.reduce((sum, r) => sum + (Number(r.kcal) || 0), 0),
 )
-
 const totalCount = computed(() => records.value.length)
 </script>
 
@@ -288,5 +297,49 @@ const totalCount = computed(() => records.value.length)
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
+}
+
+/* ✅ 포인트 모달 */
+.point-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.point-modal-box {
+  background: white;
+  width: 380px;
+  padding: 32px 26px;
+  border-radius: 14px;
+  text-align: center;
+  animation: point-show 0.2s ease-out;
+}
+
+@keyframes point-show {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.point-modal-btn {
+  margin-top: 18px;
+  padding: 10px 18px;
+  background: #6c63ff;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
 }
 </style>

@@ -9,13 +9,18 @@ export const fetchComments = (postId) => api.get(`/community/post/${postId}/comm
 export const addComment = (postId, data) => api.post(`/community/post/${postId}/comments`, data);
 
 // 댓글 수정
-export const updateComment = (postId, commentId, content) =>
-  api.patch(`/community/post/${postId}/comments/${commentId}`, { content });
-
+export const updateComment = (postId, commentId, content, memberId) => {
+  return api.patch(
+    `/community/post/${postId}/comments/${commentId}?memberId=${memberId}`,
+    { content }
+  )
+}
 // 댓글 삭제
-export const deleteComment = (postId, commentId) =>
-  api.delete(`/community/post/${postId}/comments/${commentId}`);    
-
+export const deleteComment = (postId, commentId, memberId) => {
+  return api.delete(
+    `/community/post/${postId}/comments/${commentId}?memberId=${memberId}`
+  )
+}
 // 댓글 좋아요 토글
 export const toggleCommentLike = (commentId, memberId) => {
   return api.post(`/community/comment/${commentId}/like`, null, {

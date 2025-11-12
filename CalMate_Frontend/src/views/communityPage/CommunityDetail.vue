@@ -1,12 +1,10 @@
 <template>
   <div class="detail-wrap">
-
     <!-- 뒤로가기 -->
     <button class="back-btn" @click="router.back()">← 돌아가기</button>
 
     <!-- 카드 -->
     <div class="detail-card">
-
       <!-- 작성자 + 작성일 -->
       <div class="post-header">
         <div class="author">{{ post.authorName }}</div>
@@ -15,7 +13,6 @@
 
       <!-- ✅ 제목 + 수정/삭제 같은 줄 -->
       <div class="title-action-row">
-
         <!-- 제목 -->
         <template v-if="!isEditing">
           <h2 class="title">{{ post.title }}</h2>
@@ -26,18 +23,25 @@
 
         <!-- 수정 / 삭제 / 저장 / 취소 -->
         <div class="post-action">
-          <template v-if="!isEditing">
+          <!-- ✅ 작성자 본인일 때만 버튼 노출 -->
+          <template v-if="!isEditing && post.memberId === userStore.userId">
             <button class="edit-btn" @click="startEdit">수정</button>
             <button class="delete-btn" @click="deletePost">삭제</button>
           </template>
-          <template v-else>
+
+          <!-- 타인 게시물일 경우 신고 버튼 -->
+          <template v-else-if="!isEditing && post.memberId !== userStore.userId">
+            <button class="report-btn" @click="openReportModal">🚨 신고</button>
+          </template>
+          
+          <!-- 수정 모드 -->
+          <template v-else-if="isEditing">
             <button class="save-btn" @click="saveEdit" :disabled="saving">
               {{ saving ? '저장 중...' : '저장' }}
             </button>
             <button class="cancel-btn-ghost" @click="cancelEdit" :disabled="saving">취소</button>
           </template>
         </div>
-
       </div>
 
       <!-- ✅ 카테고리 수정 -->
@@ -59,9 +63,14 @@
         <textarea v-model="form.content" class="edit-content" placeholder="내용을 입력하세요"></textarea>
       </template>
 
-      <!-- ✅ 상세조회 이미지 표시 -->
+      <!-- ✅ 상세조회 이미지 -->
       <div v-if="!isEditing && post.images?.length" class="post-images">
-        <img v-for="(img, i) in post.images" :key="i" :src="`${api.defaults.baseURL}${img}`" class="detail-img" />
+        <img
+          v-for="(img, i) in post.images"
+          :key="i"
+          :src="`${api.defaults.baseURL}${img}`"
+          class="detail-img"
+        />
       </div>
 
       <!-- ✅ 수정 모드 이미지 미리보기 -->
@@ -83,7 +92,6 @@
         </div>
       </div>
 
-
       <!-- 좋아요/댓글 -->
       <div class="post-footer">
         <button class="like-btn" @click="toggleLikePost">
@@ -91,7 +99,6 @@
         </button>
         <div>💬 {{ post.comments }}</div>
       </div>
-
     </div>
 
     <!-- 댓글 -->
@@ -99,9 +106,11 @@
       <h3>댓글</h3>
 
       <div class="comment-write">
-        <input v-model="newComment"
+        <input
+          v-model="newComment"
           placeholder="댓글을 입력하세요..."
-          @keyup.enter="submitComment"/>
+          @keyup.enter="submitComment"
+        />
         <button @click="submitComment">등록</button>
       </div>
 
@@ -116,32 +125,73 @@
       </div>
     </div>
 
+    <!-- ✅ 신고 모달 -->
+    <div v-if="showReportModal" class="modal-overlay">
+      <div class="modal-box">
+        <h3>🚨 게시글 신고하기</h3>
+        <p class="modal-subtext">신고 정보를 입력해주세요.</p>
+
+        <div class="modal-form">
+          <label>신고 제목</label>
+          <input
+            type="text"
+            v-model="reportForm.title"
+            placeholder="신고 제목을 입력하세요"
+          />
+
+          <label>신고 사유</label>
+          <select v-model="reportForm.reason">
+            <option value="" disabled>신고 사유를 선택하세요</option>
+            <option v-for="reason in reportReasons" :key="reason" :value="reason">
+              {{ reason }}
+            </option>
+          </select>
+
+          <label>신고 내용</label>
+          <textarea
+            v-model="reportForm.content"
+            placeholder="신고 내용을 입력하세요..."
+          ></textarea>
+
+          <label>이미지 첨부 (선택, 여러 장 가능)</label>
+          <input type="file" multiple @change="handleFiles" />
+
+          <div v-if="previewImages.length" class="preview-list">
+            <img v-for="(img, i) in previewImages" :key="i" :src="img" class="preview-img" />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="modal-btn" @click="submitReport">제출</button>
+          <button class="cancel-btn" @click="closeReportModal">취소</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { togglePostLike } from "@/api/post";
+import { togglePostLike } from "@/api/post"
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { fetchPostDetail, addComment } from '@/api/post'
 import api from '@/lib/api'
 import CommentItem from '@/components/CommentItem.vue'
+import { useUserStore } from "@/stores/user"
 
+const userStore = useUserStore()
 const route = useRoute()
 const router = useRouter()
 
-const removedImages = ref([])   // ✅ 삭제 요청할 이미지 목록
-
+const removedImages = ref([])
 const post = ref({})
-const existingImages = ref([])   // ✅ 기존 이미지 여러장 저장
-const previews = ref([])         // ✅ 새 이미지 미리보기
-const newImages = ref([])        // ✅ 새로 업로드되는 이미지들
+const existingImages = ref([])
+const previews = ref([])
+const newImages = ref([])
 
 const form = ref({ title: '', content: '', tagId: null })
 
 const comments = ref([])
 const newComment = ref('')
-const memberId = 1                                // 로그인 전 임시값
 
 const likeCount = ref(0)
 const liked = ref(false)
@@ -149,19 +199,90 @@ const liked = ref(false)
 const isEditing = ref(false)
 const saving = ref(false)
 
+/* ✅ 신고 관련 상태 */
+const showReportModal = ref(false)
+const reportReasons = [
+  "욕설", "도배", "사기", "음란물", "허위사실", "스팸", "괴롭힘", "기타", "명예훼손", "불법 광고"
+]
+const reportForm = ref({
+  title: '',
+  reason: '',
+  content: '',
+  victimMemberId: null,
+  offenderMemberId: null,
+  postId: null
+})
+const attachedFiles = ref([])
+const previewImages = ref([])
+
+
 const removeExistingImage = (index) => {
-  removedImages.value.push(existingImages.value[index]); // ✅ 삭제 요청 목록에 추가
-  existingImages.value.splice(index, 1); // ✅ 화면에서 제거
+  removedImages.value.push(existingImages.value[index])
+  existingImages.value.splice(index, 1)
 }
 
+
+const openReportModal = () => {
+  if (!userStore.isLoggedIn) {
+    alert("로그인이 필요합니다 😊")
+    return router.push("/sign/signIn")
+  }
+  showReportModal.value = true
+  reportForm.value.victimMemberId = userStore.userId
+  reportForm.value.offenderMemberId = post.value.memberId
+  reportForm.value.postId = post.value.id
+}
+
+const closeReportModal = () => {
+  showReportModal.value = false
+  reportForm.value = {
+    title: '',
+    reason: '',
+    content: '',
+    victimMemberId: userStore.userId,
+    offenderMemberId: post.value.memberId,
+    postId: post.value.id
+  }
+  attachedFiles.value = []
+  previewImages.value = []
+}
+
+const submitReport = async () => {
+  try {
+    const fd = new FormData()
+    fd.append("title", reportForm.value.title)
+    fd.append("reason", reportForm.value.reason)
+    fd.append("content", reportForm.value.content)
+    fd.append("victimMemberId", reportForm.value.victimMemberId)
+    fd.append("offenderMemberId", reportForm.value.offenderMemberId)
+    fd.append("postId", reportForm.value.postId)
+    fd.append("commentId", null) // ✅ 명시적으로 추가
+    attachedFiles.value.forEach(img => fd.append("images", img))
+
+    await api.post("/api/report", fd, {
+      headers: { "Content-Type": "multipart/form-data" }
+    })
+    alert("신고가 접수되었습니다.")
+    closeReportModal()
+  } catch (err) {
+    console.error(err)
+    alert("신고 중 오류가 발생했습니다.")
+  }
+}
+
+/* ✅ 게시글 + 댓글 */
 const loadPost = async () => {
   const { data } = await api.get(`/community/post/${route.params.postId}`, {
-    params: { memberId }
+    params: { memberId: userStore.userId || 0 }
   })
 
   post.value = data
-  form.value = { title: data.title, content: data.content, tagId: data.tagId != null ? String(data.tagId) : '' } // 방어
-  existingImages.value = data.images ?? []   // ✅ 배열로 저장
+  form.value = {
+    title: data.title,
+    content: data.content,
+    tagId: data.tagId != null ? String(data.tagId) : ''
+  }
+  existingImages.value = data.images ?? []
 
   likeCount.value = data.likes ?? 0
   liked.value = data.liked ?? false
@@ -169,7 +290,7 @@ const loadPost = async () => {
 
 const loadComments = async () => {
   const { data } = await api.get(`/community/post/${route.params.postId}/comments`, {
-    params: { memberId }
+    params: { memberId: userStore.userId || 0 }
   })
   comments.value = data
 }
@@ -181,18 +302,13 @@ const handleFiles = (e) => {
 
 const saveEdit = async () => {
   saving.value = true
-  
+
   const fd = new FormData()
   fd.append('title', form.value.title)
   fd.append('content', form.value.content)
   fd.append('tagId', form.value.tagId)
 
-  // ✅ 삭제된 기존 이미지 목록 보내기
-  removedImages.value.forEach(url => {
-    fd.append("deleteImages", url)
-  })
-
-  // ✅ 새 이미지 추가 업로드
+  removedImages.value.forEach(url => fd.append("deleteImages", url))
   newImages.value.forEach(img => fd.append("images", img))
 
   await api.patch(`/community/post/${route.params.postId}`, fd, {
@@ -208,6 +324,7 @@ const saveEdit = async () => {
 }
 
 const startEdit = () => {
+  if (post.value.memberId !== userStore.userId) return
   isEditing.value = true
 }
 
@@ -218,22 +335,34 @@ const cancelEdit = () => {
 }
 
 const deletePost = async () => {
+  if (post.value.memberId !== userStore.userId) return
   if (!confirm("정말 삭제하시겠습니까?")) return
   await api.delete(`/community/post/${route.params.postId}`)
   router.push("/community")
 }
 
 const toggleLikePost = async () => {
-  await togglePostLike(route.params.postId, memberId)
+  // ✅ 여기 로그인 체크 추가됨
+  if (!userStore.isLoggedIn) {
+    alert("로그인이 필요합니다 😊")
+    return router.push("/sign/signIn")
+  }
+
+  await togglePostLike(route.params.postId, userStore.userId)
   liked.value = !liked.value
   likeCount.value += liked.value ? 1 : -1
 }
 
 const submitComment = async () => {
+  if (!userStore.isLoggedIn) {
+    alert("로그인이 필요합니다 😊")
+    return router.push("/sign/signIn")
+  }
+
   if (!newComment.value.trim()) return
 
   await api.post(`/community/post/${route.params.postId}/comments`, {
-    memberId,
+    memberId: userStore.userId,
     content: newComment.value
   })
   newComment.value = ''
@@ -247,6 +376,56 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.report-btn {
+  background: #d9534f;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* ✅ 신고 모달 */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.55);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 999;
+}
+
+.modal-box {
+  background: white; width: 420px; padding: 28px 26px;
+  border-radius: 14px; text-align: center;
+}
+
+.modal-subtext { color: #777; font-size: 14px; margin-bottom: 10px; }
+
+.modal-form { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+
+.modal-form input, .modal-form select, .modal-form textarea {
+  width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 14px;
+}
+
+.modal-form textarea { min-height: 100px; resize: vertical; }
+
+.preview-list {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;
+}
+
+.preview-img {
+  width: 90px; height: 90px; border-radius: 10px; object-fit: cover; border: 1px solid #ccc;
+}
+.modal-actions { display: flex; justify-content: center; gap: 10px; margin-top: 18px; }
+.modal-btn {
+  background: #6c63ff; color: #fff; border: none; padding: 10px 18px;
+  border-radius: 8px; cursor: pointer;
+}
+.cancel-btn {
+  border: 1px solid #aaa; background: #fff; color: #555;
+  border-radius: 8px; padding: 10px 18px; cursor: pointer;
+}
+
 .detail-wrap {
   max-width: 750px;
   margin: auto;
@@ -403,6 +582,7 @@ onMounted(() => {
   flex-direction: column;
   gap: 12px;
 }
+
 .detail-img,
 .preview-img {
   width: 100%;

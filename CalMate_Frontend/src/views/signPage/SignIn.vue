@@ -72,22 +72,39 @@ const pwd = ref('pw1234!');
 
 async function signIn() {
   try{
+
+
+    // 로그인 할때 고유 아이디 세션 스토리지에 저장
+    let deviceFp = localStorage.getItem('device_fp');
+    if (!deviceFp) {
+      deviceFp = crypto.randomUUID();
+      sessionStorage.setItem('device_fp', deviceFp);
+    }
+
     const response = 
       await api.post('/login',
+      // await api.post('/member/login',                   //@@@@@@@@@@ 해당부분 잠시 수정함@@@@@@
               {
                   email: email.value,
                   pwd: pwd.value
               },
               {
-                  headers: { 'Content-Type': 'application/json' }
+                  headers: { 'Content-Type': 'application/json',
+                    "X-Device-Fp" : deviceFp
+                   }
               });
 
+    // console.log('테스트1123123:::::', sessionStorage.getItem('device_fp'));
     const token = response.headers['token']; 
     console.log('token:\n',token);
     console.log('data:\n',response.data);
     
     const { httpStatus, message,  result } = response.data;
     
+    result.user.profilePath = api.defaults.baseURL + result.user.profilePath;
+
+    console.log('result.user.profile::::',result.user.profile);
+
     console.log('user:\n',result.user);
     userStore.setToken(token);
     userStore.logIn(result.user);

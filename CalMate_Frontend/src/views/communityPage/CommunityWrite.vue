@@ -27,12 +27,11 @@
       <textarea v-model="form.content" placeholder="내용을 입력하세요"></textarea>
     </div>
 
-    <!-- ✅ 이미지 업로드 (다중) -->
+    <!-- ✅ 이미지 업로드 -->
     <div class="form-group">
       <label>이미지 첨부 (선택, 여러장 가능)</label>
       <input type="file" multiple @change="handleFiles" />
 
-      <!-- ✅ 여러장 미리보기 -->
       <div v-if="previews.length > 0" class="preview-list">
         <div v-for="(img, i) in previews" :key="i" class="preview">
           <img :src="img" alt="preview" />
@@ -43,10 +42,11 @@
     <!-- ✅ 버튼 -->
     <div class="btn-row">
       <button class="cancel-btn" @click="goBack">취소</button>
-      <button class="submit-btn" @click="submitPost">등록</button>
+      <!-- <button class="submit-btn" @click.prevent="submitPost">등록</button> -->
+      <button type="button" class="submit-btn" @click="submitPost">등록</button>
     </div>
 
-        <!-- ✅ 포인트 적립 모달 -->
+    <!-- ✅ 포인트 적립 모달 -->
     <div v-if="showPointModal" class="modal-overlay">
       <div class="modal-box">
         <h3>🎉 10포인트가 적립되었습니다!</h3>
@@ -62,7 +62,9 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from "@/lib/api"
+import { useUserStore } from "@/stores/user"   // ✅ 추가
 
+const userStore = useUserStore()              // ✅ 로그인 정보 사용
 const router = useRouter()
 const showPointModal = ref(false)
 
@@ -75,56 +77,49 @@ const form = ref({
   category: 'free',
   title: '',
   content: '',
-  images: []          // ✅ 배열로 변경
+  images: []
 })
 
 const previews = ref([])
 
-// ✅ 다중 파일 업로드 + 미리보기
 const handleFiles = (e) => {
   const files = Array.from(e.target.files)
   form.value.images = files
-
-  previewImages(files)
+  previews.value = files.map(file => URL.createObjectURL(file))
 }
 
-const previewImages = (files) => {
-  previews.value = []
-  files.forEach(file => {
-    previews.value.push(URL.createObjectURL(file))
-  })
-}
-
-/* ✅ 뒤로가기 */
-const goBack = () => {
-  router.back()
-}
+const goBack = () => router.back()
+import { nextTick } from 'vue'
 
 const submitPost = async () => {
-  if (!form.value.title.trim() || !form.value.content.trim()) {
-    alert("제목과 내용을 입력해주세요.");
-    return;
+  // await nextTick()  // ✅ form 값이 다 반영된 뒤 전송 (빈 FormData 방지)
+
+  // ✅ 로그인 체크
+  if (!userStore.isLoggedIn) {
+    alert("로그인이 필요합니다 😊")
+    return router.push("/sign/signIn")
   }
 
-  const tagMap = { meal: 2, exercise: 1, change: 3, free: 4 };
+  if (!form.value.title.trim() || !form.value.content.trim()) {
+    return alert("제목과 내용을 입력해주세요.")
+  }
 
-  const fd = new FormData();
-  fd.append("title", form.value.title);
-  fd.append("content", form.value.content);
-  fd.append("tagId", tagMap[form.value.category]);
-  fd.append("memberId", 1); // ✅ 로그인 연동 시 수정
+  const tagMap = { meal: 2, exercise: 1, change: 3, free: 4 }
 
-  // ✅ 여러장 전송
-  form.value.images.forEach(img => {
-    fd.append("images", img);
-  });
+  const fd = new FormData()
+  fd.append("title", form.value.title)
+  fd.append("content", form.value.content)
+  fd.append("tagId", tagMap[form.value.category])
+  fd.append("memberId", userStore.userId)   // ✅ 로그인한 사용자 ID 적용
+
+  form.value.images.forEach(img => fd.append("images", img))
 
   await api.post("/community/post", fd, {
     headers: { "Content-Type": "multipart/form-data" }
-  });
+  })
 
   showPointModal.value = true
-};
+}
 </script>
 
 <style scoped>

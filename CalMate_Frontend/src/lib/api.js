@@ -9,6 +9,26 @@
 
 import axios from 'axios';                  // axios 본체를 가져온다.
 import { useUserStore } from '@/stores/user'; // Pinia의 사용자 스토어(액세스 토큰을 꺼내오기 위함)
+import { useToast } from '@/lib/toast'
+import { useRouter } from 'vue-router'
+
+const router = useRouter();
+const {success, error , info} = useToast();
+// 날짜 한국 시간으로 출력하기
+const formattedTimeForKor =  () => {
+  const now = new Date();
+  const formatted = now.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(/\./g, '').replace(/ /g, '-').replace('오전', '').replace('오후', '');
+
+  return formatted;
+}
 
 // ------------------------------------------------------------
 // 1) 전역에서 쓸 Axios 인스턴스 1개 생성
@@ -19,14 +39,36 @@ const api = axios.create({
   timeout: 15000,           // 네트워크 요청 타임아웃(ms). 필요에 따라 조정 가능.
 });
 
-// ------------------------------------------------------------
-// 2) 요청 인터셉터: 요청이 나가기 "직전" 액세스 토큰을 헤더에 붙인다.
-// ------------------------------------------------------------
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2) 전역 상태 변수 (모듈 스코프)
+//    - refreshPromise: 진행 중인 리프레시 요청을 기록하는 "하나의" Promise
+//                      동시에 여러 요청이 401을 만나도 새로 만들지 않고
+//                      모두가 이 Promise를 await 하도록 만들기 위해 사용
+//    - isRefreshing:   (선택) 디버깅/가독성을 위한 보조 플래그
+//    - EXCLUDED_URLS:  인터셉터가 "자기 자신(/refresh)"을 다시 건드려 무한루프
+//                      나는 경우를 막기 위해, 리프레시/로그인 등의 URL을 제외
+// ─────────────────────────────────────────────────────────────────────────────
+let refreshPromise = null;                 // ✔ 진행 중인 리프레시 요청이 없으면 null
+let isRefreshing = false;                  // ✔ (선택) 디버깅용 플래그
+const EXCLUDED_URLS = [                    // ✔ 인터셉터 제외 대상 URL들
+  // '/member/refresh',                       //    - 실제 리프레시 호출 경로
+  // '/auth/login',                           //    - 로그인 요청(환경에 맞게 추가/수정)
+];
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3) 요청 인터셉터 (request interceptor)
+//    - 모든 요청이 서버로 나가기 "직전"에 실행된다.
+//    - Pinia 스토어에서 현재 보관 중인 access token을 꺼내 Authorization 헤더에 실어준다.
+//    - 이미 헤더가 있으면 덮어쓰지 않고, 없을 때만 세팅한다(원하면 항상 교체해도 됨).
+// ─────────────────────────────────────────────────────────────────────────────
 api.interceptors.request.use((config) => {
   // 매 요청마다 Pinia 스토어에서 최신 토큰을 읽는다. (앱이 createPinia() 된 뒤라면 안전)
-  const user = useUserStore();              // 현재 활성화된 Pinia 인스턴스에서 user 스토어를 가져온다.
+  // const user = useUserStore();              // 현재 활성화된 Pinia 인스턴스에서 user 스토어를 가져온다.
+  const user = useUserStore();   
   const token = user.token;                 // 스토어가 들고 있는 액세스 토큰 문자열을 읽는다.
-
+  console.log(`[${formattedTimeForKor()}] 백엔드 요청:`,`[${config.method}]`,`${api.defaults.baseURL + config.url}`,config);
   // 토큰이 존재하면 Authorization 헤더를 표준 Bearer 스킴으로 세팅한다.
   if (token) {
     config.headers = config.headers || {};  // headers 객체가 없을 수도 있으므로 보장한다.
@@ -38,87 +80,128 @@ api.interceptors.request.use((config) => {
   return config;                            // 수정된 config를 반환하면 이 설정이 실제 요청에 적용된다.
 });
 
-// ------------------------------------------------------------
-// 3) 응답 인터셉터: 401이면 /auth/refresh를 자동으로 호출하고, 성공 시 원요청을 재시도
-//    - 중복 리프레시 방지를 위해 isRefreshing 플래그와 대기 큐를 둔다.
-// ------------------------------------------------------------
-let isRefreshing = false;                   // 현재 리프레시 중인지 표시 (동시에 여러 개가 호출되는 걸 막는다)
-let waitQueue = [];                         // 리프레시가 끝날 때까지 대기할 "원 요청"들의 재시도 콜백을 담는 큐
-
+// ─────────────────────────────────────────────────────────────────────────────
+// 4) 응답 인터셉터 (response interceptor)
+//    - 서버에서 응답이 돌아왔을 때 실행된다.
+//    - 정상 응답은 그대로 반환, 에러 응답(특히 401/403)은 토큰 리프레시를 시도한다.
+//    - 핵심: 단 하나의 refreshPromise만 만들어 모두가 await 하도록 한다.
+// ─────────────────────────────────────────────────────────────────────────────
 api.interceptors.response.use(
-  // 정상 응답은 그대로 통과시킨다.
+  // 4-1) 성공 응답은 있는 그대로 통과
   (response) => response,
 
-  // 에러 응답만 따로 처리한다.
+  // 4-2) 에러 응답 처리(주로 401/403)
   async (error) => {
-    const original = error.config;          // 실패한 "원 요청"의 설정 객체를 참조한다.
-    const status = error?.response?.status; // HTTP 상태 코드(401 등)를 꺼낸다.
+    // 4-2-1) 실패한 "원 요청"의 설정 객체를 가져온다.
+    const original = error && error.config; // ✔ 실패 요청의 axios config (재시도에 필요)
+    const status = error && error.response && error.response.status; // ✔ HTTP 상태 코드
 
-    // 401(Unauthorized)이고, 아직 이 요청에 대해 재시도 마크를 안 달았으면 처리한다.
-    if (status === 401 && original && !original._retry) {
-      original._retry = true;               // 무한 루프를 막기 위한 커스텀 플래그 (_retry)
-
-      // 만약 지금 리프레시가 진행 중이 아니라면, 우리가 리프레시를 시작한다.
-      if (!isRefreshing) {
-        isRefreshing = true;                // 이제부터 리프레시 중 상태
-
-        try {
-          // /auth/refresh 엔드포인트로 POST 요청을 보낸다.
-          // - withCredentials: true → HttpOnly 쿠키(리프레시 토큰)를 자동으로 동봉
-          // - X-Device-Fp: 선택 헤더 (서버에서 UA/디바이스 바인딩 검증 시 사용 가능)
-          const refreshRes = await axios.post(
-            '/api/auth/refresh',
-            {},                              // 보통 바디는 비우고, 쿠키로 식별한다.
-            {
-              withCredentials: true,         // ✅ 리프레시 쿠키를 자동 전송하도록 한다.
-              headers: { 'X-Device-Fp': navigator.userAgent }, // (선택) 간단한 디바이스 지문 힌트
-            }
-          );
-
-          // 서버가 새 액세스 토큰을 JSON 바디로 내려준다고 가정한다.
-          const newAccessToken = refreshRes.data.accessToken;
-
-          // Pinia 스토어에 새 토큰을 반영한다. (이후 요청부터는 요청 인터셉터가 자동으로 새 토큰을 실어준다)
-          const user = useUserStore();       // 스토어 인스턴스 획득
-          user.setToken(newAccessToken);     // 액세스 토큰 갱신
-
-          // 리프레시가 끝났으므로, 대기 중이던 원 요청들을 재개한다.
-          // - waitQueue에 있는 각 콜백에 newAccessToken을 넘겨주면,
-          //   콜백들이 Authorization 헤더를 교체하고 원 요청을 다시 보낼 것이다.
-          waitQueue.forEach((resume) => resume(newAccessToken));
-          waitQueue = [];                    // 큐를 비운다.
-        } catch (e) {
-          // 리프레시 자체가 실패했다면 더 이상 자동 복구가 불가하다.
-          // - 사용자를 로그아웃시키고,
-          // - 로그인 화면으로 보내는 등의 처리가 필요하다.
-          waitQueue = [];                    // 큐를 비운다.
-          const user = useUserStore();       // 스토어 접근
-          user.logOut();                     // 모든 사용자 상태/토큰 초기화
-          // 여기에서 라우터로 /login 이동 등을 수행하는 것을 권장한다.
-          return Promise.reject(e);          // 상위로 에러를 그대로 전달한다.
-        } finally {
-          // 무엇이 되었든 리프레시 시도는 종료되었다.
-          isRefreshing = false;
-        }
-      }
-
-      // 여기까지 왔다는 건:
-      // - 누군가 리프레시를 이미 시작했고(우리가 시작했거나, 다른 요청이 먼저 시작했거나),
-      // - 우리는 그 리프레시가 끝나길 기다렸다가 원 요청을 재시도해야 한다는 뜻이다.
-      return new Promise((resolve) => {
-        // 새 토큰을 받으면 Authorization 헤더를 교체하고, 다시 보내도록 한다.
-        waitQueue.push((newToken) => {
-          original.headers = original.headers || {};           // 원 요청의 헤더 보장
-          original.headers.Authorization = `Bearer ${newToken}`; // 새 토큰으로 교체
-          resolve(api(original));                              // 동일 인스턴스로 "원 요청"을 재시도
-        });
-      });
+    // 4-2-2) 설정 객체가 없으면(아주 특이 케이스) 더 할 수 있는 게 없으므로 그대로 던진다.
+    if (!original) {
+      return Promise.reject(error);
     }
 
-    // 401이 아니거나, 이미 재시도한 요청이라면 에러를 그대로 던진다.
+    // 4-2-3) 인터셉터 제외 대상 URL이면(리프레시/로그인이 실패해서 또 들어온 경우 등),
+    //        루프를 방지하기 위해 그대로 던진다.
+    const url = original.url || '';
+    if (EXCLUDED_URLS.some((u) => url.includes(u))) {
+      return Promise.reject(error);
+    }
+
+    // 4-2-4) 401 또는 403을 만났고, 아직 이 요청에 대해 재시도 마크를 안 달았다면 처리 시작
+    if ((status === 401 || status === 403) && !original._retry) {
+      // 4-2-4-1) 무한 루프 방지를 위한 커스텀 플래그
+      original._retry = true;
+
+      try {
+        // ─────────────────────────────────────────────────────────
+        // (A) 현재 진행 중인 리프레시가 없다면 "지금" 하나 만든다.
+        //     있으면 새로 만들지 않고 그 Promise를 그대로 기다린다.
+        //     → 이렇게 하면 동시 다발적인 401에도 리프레시가 1번만 일어난다.
+        // ─────────────────────────────────────────────────────────
+        if (!refreshPromise) {
+          isRefreshing = true;                                       // ✔ (선택) 플래그 on
+
+          // 4-2-4-2) 새 리프레시 Promise 생성
+          refreshPromise = (async () => {
+            // 4-2-4-2-1) /refresh 호출: withCredentials로 HttpOnly 쿠키 자동 전송
+            const refreshRes = await api.post(
+              '/member/refresh',                                            // ✔ baseURL('/member') + '/refresh' = '/member/refresh'
+              {},                                                    // ✔ 보통 바디는 비움 (쿠키 기준 식별)
+              {
+                withCredentials: true,                               // ✔ 쿠키 전송 필수
+                headers: {
+                  // (선택) 서버가 UA/디바이스 바인딩 검증을 한다면 간단한 힌트로 디바이스 지문을 보낼 수 있다.
+                  'X-Device-Fp': sessionStorage.getItem('device_fp') || '',
+                },
+              }
+            );
+
+            // 4-2-4-2-2) 서버가 새 액세스 토큰을 JSON 바디로 내려준다고 가정
+            const newAccessToken = refreshRes && refreshRes.data && refreshRes.data.accessToken;
+
+            // 4-2-4-2-3) 토큰이 없다면 에러로 간주
+            if (!newAccessToken) {
+              throw new Error('No accessToken in refresh response');
+            }
+
+            // 4-2-4-2-4) Pinia 스토어에 새 토큰 반영 (요청 인터셉터가 이후부터 자동 부착)
+            const user = useUserStore();                             // ✔ 스토어 접근
+            user.setToken(newAccessToken);                           // ✔ 토큰 갱신(Pinia 상태 업데이트)
+            success('토큰 재 발급',{description: '엑세스 토큰이 재 발급 되었습니다.' });
+            // 4-2-4-2-5) 이 Promise의 결과값으로 새 토큰을 반환 (동시에 기다리는 요청들이 이 값을 받는다)
+            return newAccessToken;
+          })()
+            .catch((e) => {
+              // 4-2-4-3) 리프레시 자체가 실패한 경우: 더 이상의 자동 복구가 불가
+              const user = useUserStore();                           // ✔ 스토어 접근
+              user.logOut();                                         // ✔ 로그인 상태 초기화/세션 정리
+              error('이상 접근 감지',{description: '비정상 접근이 갑지 되어 재 로그인 시도 부탁 드립니다.' });
+              router.push('/sign/signIn');
+              throw e;                                               // ✔ 상위로 에러 전파
+            })
+            .finally(() => {
+              // 4-2-4-4) 어떤 경우든 리프레시 시도는 종료되었다.
+              isRefreshing = false;                                  // ✔ (선택) 플래그 off
+              refreshPromise = null;                                 // ✔ 다음 401을 위해 promise 슬롯 비우기
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // (B) 여기서는 "이미 있거나 방금 만든" 공용 refreshPromise를 기다린다.
+        //     모든 동시 401 요청이 같은 Promise를 await 하므로 리프레시가 1회만 수행된다.
+        // ─────────────────────────────────────────────────────────
+        const token = await refreshPromise;                          // ✔ 새 토큰 수신
+
+        // ─────────────────────────────────────────────────────────
+        // (C) 새 토큰으로 "원 요청"을 재시도
+        // ─────────────────────────────────────────────────────────
+        original.headers = original.headers || {};                   // ✔ 헤더 객체 보장
+        original.headers.Authorization = `Bearer ${token}`;          // ✔ Authorization 교체
+        return api(original);                                        // ✔ 동일 인스턴스로 재시도하여 결과 반환
+      } catch (e) {
+        // 4-2-4-5) 리프레시 실패: 상위로 에러 전파(라우터에서 /login으로 보내는 등 처리)
+        return Promise.reject(e);
+      }
+    }
+
+    // 4-2-5) 401/403이 아니거나, 이미 재시도한 요청이라면 그 외 에러를 그대로 전파
     return Promise.reject(error);
   }
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5) 도우미(선택): 앱의 다른 곳에서 명시적으로 토큰을 세팅하고 싶을 때 사용
+//    - 예: 로그인 성공 직후 서버가 바디로 accessToken을 내려주면 setAccessToken(data.accessToken)
+// ─────────────────────────────────────────────────────────────────────────────
+export function setAccessToken(token) {
+  const user = useUserStore();             // ✔ Pinia 스토어 접근
+  user.setToken(token);                    // ✔ 스토어에 토큰 저장
+  // 추가로, 즉시 axios 기본 헤더에도 심어두고 싶다면 아래 라인을 풀어도 된다.
+  // api.defaults.headers.common.Authorization = `Bearer ${token}`;
+}
+
+
 
 // ------------------------------------------------------------
 // 4) 다른 파일에서 import 해서 사용할 수 있도록 export 한다.

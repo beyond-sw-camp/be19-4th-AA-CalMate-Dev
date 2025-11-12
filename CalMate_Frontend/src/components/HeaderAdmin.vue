@@ -79,7 +79,7 @@ import mainIcon from '../assets/images/mainIcon.png'
 import communityIcon from '../assets/images/header/community.png'
 import pointIcon from '../assets/images/header/point.png'
 import logoutIcon from '../assets/images/header/logout.png'
-import ModalLogoutConfirm from '@/components/ModalLogoutConfirm.vue'
+import ModalLogoutConfirm from '@/components/ModalConfirm.vue'
 
 const userStore = useUserStore()
 
@@ -94,7 +94,7 @@ const isActive = (path) => route.path.startsWith(path)
 async function handleLogout() {
   // await api.post('/auth/logout')
   userStore.logOut();
-  // console.log('로그아웃 실행!')
+  sessionStorage.removeItem('device_fp');
   await router.push('/sign/signIn')
 }
 

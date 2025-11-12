@@ -15,27 +15,32 @@
     </template>
 
     <template v-else>
-      <p class="body"
-        :class="{ deleted: comment.content === '삭제된 댓글입니다.' }">
+      <p class="body" :class="{ deleted: comment.content === '삭제된 댓글입니다.' }">
         {{ comment.content }}
       </p>
     </template>
 
     <div class="actions">
-
       <!-- ✅ 댓글 좋아요 버튼 -->
       <button class="like-btn" @click="toggleLike">
         <span :class="{ active: liked }">❤️</span> {{ likeCount }}
       </button>
 
-      <!-- 대댓글 -->
+      <!-- 답글 -->
       <button class="reply-btn" @click="toggleReply">
         {{ showReply ? '취소' : '답글' }}
       </button>
 
-      <!-- 수정 / 삭제 -->
-      <button class="edit-btn" @click="startEdit">수정</button>
-      <button class="delete-btn" @click="removeComment">삭제</button>
+      <!-- ✏️ 본인일 때만 수정/삭제 -->
+      <template v-if="userStore.userId === comment.memberId">
+        <button class="edit-btn" @click="startEdit">수정</button>
+        <button class="delete-btn" @click="removeComment">삭제</button>
+      </template>
+
+      <!-- 🚨 신고 버튼 (다른 사람 댓글일 때만) -->
+      <template v-else>
+        <button class="report-btn" @click="openReportModal">🚨 신고</button>
+      </template>
     </div>
 
     <!-- ✅ 답글 입력 -->
@@ -58,14 +63,67 @@
         @submitted="$emit('submitted')"
       />
     </div>
+
+    <!-- ✅ 신고 모달 -->
+    <div v-if="showReportModal" class="modal-overlay">
+      <div class="modal-box">
+        <h3>🚨 댓글 신고하기</h3>
+        <p class="modal-subtext">신고 정보를 입력해주세요.</p>
+
+        <div class="modal-form">
+          <!-- ✅ 신고 제목 -->
+          <label>신고 제목</label>
+          <input
+            type="text"
+            v-model="reportForm.title"
+            placeholder="신고 제목을 입력하세요"
+          />
+
+          <!-- ✅ 신고 사유 -->
+          <label>신고 사유</label>
+          <select v-model="reportForm.reason">
+            <option value="" disabled>신고 사유를 선택하세요</option>
+            <option v-for="reason in reportReasons" :key="reason" :value="reason">
+              {{ reason }}
+            </option>
+          </select>
+
+          <!-- ✅ 상세 내용 -->
+          <label>신고 내용</label>
+          <textarea
+            v-model="reportForm.content"
+            placeholder="신고 내용을 입력하세요..."
+          ></textarea>
+
+          <!-- ✅ 이미지 첨부 -->
+          <label>이미지 첨부 (선택, 여러 장 가능)</label>
+          <input type="file" multiple @change="handleFiles" />
+
+          <div v-if="previewImages.length" class="preview-list">
+            <img v-for="(img, i) in previewImages" :key="i" :src="img" class="preview-img" />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="modal-btn" @click="submitReport">제출</button>
+          <button class="cancel-btn" @click="closeReportModal">취소</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 defineOptions({ name: 'CommentItem' })
 
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from "@/stores/user"
 import { addComment, updateComment, deleteComment, toggleCommentLike } from '@/api/post'
+import api from '@/lib/api'
+
+const userStore = useUserStore()
+const router = useRouter()
 
 const props = defineProps({
   comment: { type: Object, required: true },
@@ -73,40 +131,26 @@ const props = defineProps({
 })
 const emit = defineEmits(['submitted'])
 
-/* ✅ 좋아요 상태 */
+/* ✅ 좋아요 */
 const likeCount = ref(props.comment.likeCount ?? 0)
 const liked = ref(props.comment.liked ?? false)
-const memberId = 1                              // 로그인 연동 전 임시 값
 
-// const toggleLike = async () => {
-//   try {
-//     const { data } = await toggleCommentLike(props.comment.id, memberId)
-//     likeCount.value = data.likeCount
-//     liked.value = data.liked
-//   } catch (e) {
-//     console.error("댓글 좋아요 오류:", e)
-//   }
-// }
 const toggleLike = async () => {
-  try {
-    const { data } = await toggleCommentLike(props.comment.id, memberId)
+  if (!userStore.isLoggedIn) {
+    alert("로그인이 필요합니다 😊")
+    return router.push("/sign/signIn")
+  }
 
-    // 서버 응답이 likeCount, liked 를 주지 않더라도 로직 유지됨
-    if (liked.value) {
-      // 이미 좋아요 상태였다면 → 좋아요 취소
-      likeCount.value = Math.max(likeCount.value - 1, 0)
-      liked.value = false
-    } else {
-      // 좋아요 추가
-      likeCount.value = likeCount.value + 1
-      liked.value = true
-    }
+  await toggleCommentLike(props.comment.id, userStore.userId)
 
-  } catch (e) {
-    console.error("댓글 좋아요 오류:", e)
+  if (liked.value) {
+    likeCount.value = Math.max(likeCount.value - 1, 0)
+    liked.value = false
+  } else {
+    likeCount.value += 1
+    liked.value = true
   }
 }
-
 
 /* ✅ 대댓글 */
 const showReply = ref(false)
@@ -114,38 +158,121 @@ const replyText = ref('')
 const toggleReply = () => (showReply.value = !showReply.value)
 
 const submitReply = async () => {
+  if (!userStore.isLoggedIn) {
+    alert("로그인이 필요합니다 😊")
+    return router.push("/sign/signIn")
+  }
   if (!replyText.value.trim()) return
+
   await addComment(props.postId, {
-    memberId: 1,
+    memberId: userStore.userId,
     content: replyText.value,
     parentId: props.comment.id
   })
+
   replyText.value = ''
   showReply.value = false
   emit('submitted')
 }
 
-/* ✅ 수정 */
+/* ✅ 수정/삭제 */
 const isEditing = ref(false)
 const editText = ref(props.comment.content)
 
-const startEdit = () => (isEditing.value = true)
+const startEdit = () => {
+  if (!userStore.isLoggedIn) {
+    alert("로그인이 필요합니다 😊")
+    return router.push("/sign/signIn")
+  }
+  isEditing.value = true
+}
+
 const cancelEdit = () => {
   editText.value = props.comment.content
   isEditing.value = false
 }
+
 const saveEdit = async () => {
   if (!editText.value.trim()) return
-  await updateComment(props.postId, props.comment.id, editText.value)
+  await updateComment(props.postId, props.comment.id, editText.value, userStore.userId)
   isEditing.value = false
   emit('submitted')
 }
 
-/* ✅ 삭제 */
 const removeComment = async () => {
   if (!confirm("정말 삭제하시겠습니까?")) return
-  await deleteComment(props.postId, props.comment.id)
+  await deleteComment(props.postId, props.comment.id, userStore.userId)
   emit('submitted')
+}
+
+/* ✅ 신고 기능 */
+const showReportModal = ref(false)
+const reportReasons = [
+  "욕설", "도배", "사기", "음란물", "허위사실", "스팸", "괴롭힘", "기타", "명예훼손", "불법 광고"
+]
+const reportForm = ref({
+  title: '',
+  reason: '',
+  content: '',
+  victimMemberId: null,
+  offenderMemberId: null,
+  postId: props.postId,
+  commentId: props.comment.id
+})
+const attachedFiles = ref([])
+const previewImages = ref([])
+
+const handleFiles = (e) => {
+  attachedFiles.value = Array.from(e.target.files)
+  previewImages.value = attachedFiles.value.map(file => URL.createObjectURL(file))
+}
+
+const openReportModal = () => {
+  if (!userStore.isLoggedIn) {
+    alert("로그인이 필요합니다 😊")
+    return router.push("/sign/signIn")
+  }
+  showReportModal.value = true
+  reportForm.value.victimMemberId = userStore.userId
+  reportForm.value.offenderMemberId = props.comment.memberId
+}
+
+const closeReportModal = () => {
+  showReportModal.value = false
+  reportForm.value = {
+    title: '',
+    reason: '',
+    content: '',
+    victimMemberId: userStore.userId,
+    offenderMemberId: props.comment.memberId,
+    postId: props.postId,
+    commentId: props.comment.id
+  }
+  attachedFiles.value = []
+  previewImages.value = []
+}
+
+const submitReport = async () => {
+  try {
+    const fd = new FormData()
+    fd.append("title", reportForm.value.title)
+    fd.append("reason", reportForm.value.reason)
+    fd.append("content", reportForm.value.content)
+    fd.append("victimMemberId", reportForm.value.victimMemberId)
+    fd.append("offenderMemberId", reportForm.value.offenderMemberId)
+    fd.append("postId", reportForm.value.postId)
+    fd.append("commentId", reportForm.value.commentId)
+    attachedFiles.value.forEach(img => fd.append("images", img))
+
+    await api.post('/api/report', fd, {
+      headers: { "Content-Type": "multipart/form-data" }
+    })
+    alert('신고가 접수되었습니다.')
+    closeReportModal()
+  } catch (e) {
+    console.error(e)
+    alert('신고 중 오류가 발생했습니다.')
+  }
 }
 </script>
 
@@ -159,26 +286,20 @@ const removeComment = async () => {
 .actions { display: flex; gap: 10px; margin-top: 6px; align-items: center; }
 
 .like-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  background: none; border: none; cursor: pointer; color: #666;
+  display: flex; align-items: center; gap: 4px;
 }
 .like-btn .active {
   color: #ff4d6d;
   transform: scale(1.2);
   transition: 0.2s;
 }
-
-.reply-btn, .edit-btn, .delete-btn {
+.reply-btn, .edit-btn, .delete-btn, .report-btn {
   background: none; border: none; cursor: pointer; padding: 4px 0;
 }
 .reply-btn { color: #6c63ff; }
 .edit-btn { color: #555; }
-.delete-btn { color: #d9534f; }
+.delete-btn, .report-btn { color: #d9534f; }
 
 .reply-box { display: flex; gap: 8px; margin: 8px 0; }
 .reply-box input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
@@ -189,10 +310,38 @@ const removeComment = async () => {
 
 .replies { margin-left: 16px; border-left: 2px solid #f0f0f0; padding-left: 12px; }
 
-.deleted {
-  color: #9e9e9e;
-  opacity: 0.7;
-  font-style: italic;
-  font-size: 13px;
+.deleted { color: #9e9e9e; opacity: 0.7; font-style: italic; font-size: 13px; }
+
+/* ✅ 신고 모달 */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.55);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 999;
+}
+.modal-box {
+  background: white; width: 420px; padding: 28px 26px;
+  border-radius: 14px; text-align: center;
+}
+.modal-subtext { color: #777; font-size: 14px; margin-bottom: 10px; }
+.modal-form { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.modal-form input, .modal-form select, .modal-form textarea {
+  width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 14px;
+}
+.modal-form textarea { min-height: 100px; resize: vertical; }
+.preview-list {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;
+}
+.preview-img {
+  width: 90px; height: 90px; border-radius: 10px; object-fit: cover; border: 1px solid #ccc;
+}
+.modal-actions { display: flex; justify-content: center; gap: 10px; margin-top: 18px; }
+.modal-btn {
+  background: #6c63ff; color: #fff; border: none; padding: 10px 18px;
+  border-radius: 8px; cursor: pointer;
+}
+.cancel-btn {
+  border: 1px solid #aaa; background: #fff; color: #555;
+  border-radius: 8px; padding: 10px 18px; cursor: pointer;
 }
 </style>
