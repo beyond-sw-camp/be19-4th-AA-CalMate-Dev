@@ -2,6 +2,7 @@ package com.ateam.calmate.member.command.controller;
 
 import com.ateam.calmate.common.ResponseMessage;
 import com.ateam.calmate.member.command.dto.*;
+import com.ateam.calmate.member.command.service.GoalService;
 import com.ateam.calmate.member.command.service.MemberService;
 import com.ateam.calmate.member.command.service.RefreshTokenService;
 import com.ateam.calmate.security.CookieUtil;
@@ -31,18 +32,21 @@ public class MemberController {
     private final JwtFactory  jwt;
     private final CookieUtil cookieUtil;
     private final RefreshTokenService refreshTokenService;
+    private final GoalService goalService;
 
 
     public MemberController(MemberService memberService
     , BCryptPasswordEncoder bCryptPasswordEncoder
     , JwtFactory  jwt
     , CookieUtil cookieUtil
-    , RefreshTokenService refreshTokenService) {
+    , RefreshTokenService refreshTokenService
+    , GoalService goalService) {
         this.memberService = memberService;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.jwt = jwt;
         this.cookieUtil = cookieUtil;
         this.refreshTokenService = refreshTokenService;
+        this.goalService = goalService;
     }
 
 
@@ -115,10 +119,6 @@ public class MemberController {
         return ResponseEntity.ok()
                 .body(responseMessage);
     }
-
-
-
-
 
     @PostMapping("/Profile/{id}")
     public ResponseEntity<ResponseMessage> updateProfileImage(
@@ -229,6 +229,26 @@ public class MemberController {
         ResponseCookie del = cookieUtil.deleteRefreshCookie();// 쿠키 삭제
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, del.toString()).build();
     }
+
+    @GetMapping("/goal/{id}")
+    public ResponseEntity<ResponseMessage> getGoal(@PathVariable Long id) {
+        RequestMemberGoalDTO goalDTO =
+                goalService.getMemberGoal(id);
+
+        ResponseMessage responseMessage = new  ResponseMessage();
+        Map<String,Object> responseMap = new HashMap<>();
+
+        responseMessage.setHttpStatus(HttpStatus.OK.value());
+        responseMessage.setMessage("조회 완료");
+        responseMap.put("goalData", goalDTO);
+        responseMessage.setResult(responseMap);
+
+        return ResponseEntity.ok()
+                .body(responseMessage);
+
+
+    }
+
 
 
 
