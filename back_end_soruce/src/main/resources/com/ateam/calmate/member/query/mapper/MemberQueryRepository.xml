@@ -54,9 +54,9 @@
              , b.authId
              , c.authName
              , c.authDescribe
-          FROM Member a
-          JOIN MemberAuthority b on a.id = b.cumId
-          JOIN AuthorityList c on b.authId = c.id
+          FROM member a
+          JOIN memberAuthority b on a.id = b.cumId
+          JOIN authorityList c on b.authId = c.id
          WHERE a.email = #{email}
     </select>
 

@@ -10,10 +10,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 @EnableJpaAuditing
 @EnableFeignClients
 @EnableDiscoveryClient
-public class MountainspiritApplication {
+public class CalMateApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MountainspiritApplication.class, args);
+        SpringApplication.run(CalMateApplication.class, args);
     }
 
 }
