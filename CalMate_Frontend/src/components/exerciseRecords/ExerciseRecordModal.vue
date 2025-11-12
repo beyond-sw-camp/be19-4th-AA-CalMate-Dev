@@ -29,6 +29,9 @@
             type="text"
             class="field-input"
             placeholder="운동 시간(분)을 입력해주세요!!"
+            @input="(e) => handleNumericInput('minutes', e)"
+            @compositionstart="onCompositionStart"
+            @compositionend="(e) => onCompositionEnd('minutes', e)"
           />
         </div>
 
@@ -39,6 +42,9 @@
             type="text"
             class="field-input"
             placeholder="소모 칼로리를 입력해주세요!!"
+            @input="(e) => handleNumericInput('kcal', e)"
+            @compositionstart="onCompositionStart"
+            @compositionend="(e) => onCompositionEnd('kcal', e)"
           />
         </div>
 
@@ -120,17 +126,13 @@ import closeIcon from '@/assets/images/close.png'
 const props = defineProps({
   visible: { type: Boolean, default: false },
   mode: { type: String, default: 'create' },
-  initialData: {
-    type: Object,
-    default: () => null,
-  },
+  initialData: { type: Object, default: () => null },
 })
 
 const emit = defineEmits(['close', 'save'])
-
 const isEdit = computed(() => props.mode === 'edit')
-
 const fileInput = ref(null)
+const isComposing = ref(false)
 
 const form = reactive({
   type: '',
@@ -143,9 +145,7 @@ const form = reactive({
 
 const clearObjectUrls = () => {
   form.previews.forEach((p) => {
-    if (p.isObjectUrl) {
-      URL.revokeObjectURL(p.url)
-    }
+    if (p.isObjectUrl) URL.revokeObjectURL(p.url)
   })
 }
 
@@ -191,10 +191,7 @@ watch(
 )
 
 const onClose = () => emit('close')
-
-const openFileDialog = () => {
-  fileInput.value?.click()
-}
+const openFileDialog = () => fileInput.value?.click()
 
 const addFilesToPreviews = (files) => {
   Array.from(files).forEach((file) => {
@@ -212,9 +209,7 @@ const onFileChange = (e) => {
 const removePreview = (idx) => {
   const item = form.previews[idx]
   if (!item) return
-  if (item.isObjectUrl) {
-    URL.revokeObjectURL(item.url)
-  }
+  if (item.isObjectUrl) URL.revokeObjectURL(item.url)
   form.previews.splice(idx, 1)
   form.files.splice(idx, 1)
 }
@@ -223,6 +218,22 @@ const removeExisting = (idx) => {
   const item = form.existingPreviews[idx]
   if (!item) return
   form.existingPreviews.splice(idx, 1)
+}
+
+const onCompositionStart = () => {
+  isComposing.value = true
+}
+
+const onCompositionEnd = (field, e) => {
+  isComposing.value = false
+  handleNumericInput(field, e)
+}
+
+const handleNumericInput = (field, e) => {
+  if (isComposing.value) return
+  const value = e.target.value || ''
+  const digits = value.replace(/[^0-9.]/g, '') // 소수 허용
+  form[field] = digits
 }
 
 const onSubmit = () => {
