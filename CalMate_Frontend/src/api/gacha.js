@@ -49,9 +49,11 @@ export async function recordGachaDrawLog(memberId, boardCellId, prizeId) {
 
 export async function fetchMemberDrawHistory(memberId, eventId, page = 1, size = 10) {
   if (!memberId) throw new Error('memberId is required');
-  const { data } = await api.get(`${BASE_PATH}/member/${memberId}/draw-history`, {
-    params: { eventId, page, size },
-  });
+  const params = { page, size };
+  if (eventId) {
+    params.eventId = eventId;
+  }
+  const { data } = await api.get(`${BASE_PATH}/member/${memberId}/draw-history`, { params });
   return data;
 }
 

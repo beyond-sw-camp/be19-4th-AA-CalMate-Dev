@@ -61,6 +61,19 @@
       </div>
     </div>
 
+    <div class="history-trigger-card">
+      <button type="button" class="history-trigger" @click="openHistoryModal">
+        <div>
+          <p class="history-trigger__eyebrow">내가 뽑은 목록</p>
+          <p class="history-trigger__title">최근 보상을 한눈에 확인해보세요</p>
+        </div>
+        <div class="history-trigger__meta">
+          <span class="history-trigger__count">{{ historyTotalLabel }}</span>
+          <span class="history-trigger__chevron" aria-hidden="true">↗</span>
+        </div>
+      </button>
+    </div>
+
     <div class="probability-card">
       <div class="probability-header">
         <span>📊</span>
@@ -158,6 +171,91 @@
       </div>
     </transition>
   </Teleport>
+
+  <Teleport to="body">
+    <transition name="history-modal">
+      <div
+        v-if="showHistoryModal"
+        class="history-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="내가 뽑은 보상 목록"
+      >
+        <div class="history-modal__backdrop" @click="closeHistoryModal" />
+        <div class="history-modal__content">
+          <button type="button" class="history-modal__close" @click="closeHistoryModal">
+            ✕
+          </button>
+          <header class="history-modal__header">
+            <p class="history-modal__eyebrow">행운의 뽑기</p>
+            <h3>내가 뽑은 보상 목록</h3>
+            <p class="history-modal__subtitle">이번 이벤트에서 획득한 보상을 확인하세요.</p>
+          </header>
+
+          <section class="history-modal__stats">
+            <article
+              v-for="stat in historyStatCards"
+              :key="stat.key"
+              class="history-modal__stat-card"
+            >
+              <p>{{ stat.label }}</p>
+              <strong>{{ stat.value }}</strong>
+              <small v-if="stat.suffix">{{ stat.suffix }}</small>
+            </article>
+          </section>
+
+          <section class="history-modal__body">
+            <p v-if="historyError" class="history-modal__error">{{ historyError }}</p>
+
+            <div v-else-if="!historyItems.length && !historyLoading" class="history-modal__empty">
+              <div class="history-modal__gift">🎁</div>
+              <p>아직 뽑은 보상이 없습니다.</p>
+              <small>행운의 뽑기를 시도해보세요!</small>
+            </div>
+
+            <div v-else>
+              <ul class="history-modal__list">
+                <li v-for="item in historyItems" :key="item.id" class="history-modal__row">
+                  <div class="history-modal__rarity">
+                    {{ rarityConfig[item.rarity]?.emoji || '🎁' }}
+                  </div>
+                  <div class="history-modal__list-text">
+                    <p>{{ item.name }}</p>
+                    <small>{{ item.description }}</small>
+                  </div>
+                  <div class="history-modal__list-meta">
+                    <Badge variant="outline" class="history-modal__rarity-badge">
+                      {{ rarityConfig[item.rarity]?.label || '보상' }}
+                    </Badge>
+                    <span>{{ formatHistoryDate(item.wonAt) }}</span>
+                  </div>
+                </li>
+              </ul>
+
+              <div class="history-modal__footer">
+                <button
+                  v-if="historyHasMore"
+                  type="button"
+                  class="history-modal__load"
+                  :disabled="historyLoading"
+                  @click="loadMoreHistory"
+                >
+                  {{ historyLoading ? '불러오는 중...' : '더 불러오기' }}
+                </button>
+                <p v-else class="history-modal__footer-text">
+                  {{ historyItems.length ? '마지막 기록까지 모두 확인했어요.' : '' }}
+                </p>
+              </div>
+            </div>
+
+            <p v-if="historyLoading && !historyItems.length" class="history-modal__loading">
+              불러오는 중입니다...
+            </p>
+          </section>
+        </div>
+      </div>
+    </transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -168,6 +266,7 @@ import {
   fetchActiveGachaEvent,
   fetchEventPrizes,
   fetchMemberBoardCells,
+  fetchMemberDrawHistory,
   drawGacha,
 } from '@/api/gacha';
 import Badge from '../ui/Badge.vue';
@@ -201,6 +300,18 @@ const rewardModalListener = ref(null);
 const boardResetTimer = ref(null);
 const stompClient = ref(null);
 const subscription = ref(null);
+const stompConnected = ref(false);
+const currentTopic = ref('');
+const showHistoryModal = ref(false);
+const historyItems = ref([]);
+const historyLoading = ref(false);
+const historyError = ref('');
+const historyPage = ref(1);
+const historyHasMore = ref(false);
+const historyStats = ref(createDefaultHistoryStats());
+const historyTotal = ref(0);
+const historyNeedsRefresh = ref(true);
+const historyModalListener = ref(null);
 
 const boardCells = ref([]);
 const boardSnapshot = ref(null);
@@ -221,29 +332,30 @@ const AUTO_REROLL_TRIGGER_RARITY = 'legendary';
 const AUTO_REROLL_BATCH = 100; // 10 x 10 automatic draws
 const AUTO_REROLL_DELAY_MS = 350;
 const BOARD_RESET_DELAY_MS = 400;
+const HISTORY_PAGE_SIZE = 12;
 
 const rarityConfig = {
   common: {
     key: 'common',
-    label: '일반',
+    label: '꽝',
     emoji: '⚪',
     chance: 70,
   },
   rare: {
     key: 'rare',
-    label: '레어',
+    label: '100포인트',
     emoji: '🔵',
     chance: 25,
   },
   epic: {
     key: 'epic',
-    label: '에픽',
+    label: '춥파춥스',
     emoji: '🟣',
     chance: 4,
   },
   legendary: {
     key: 'legendary',
-    label: '전설',
+    label: '츄잉껌',
     emoji: '🟡',
     chance: 1,
   },
@@ -365,6 +477,42 @@ const boardDisabled = computed(
   () => isDrawing.value || isLoadingBoard.value || remainingDraws.value <= 0,
 );
 
+const historyTotalLabel = computed(() => `${historyTotal.value.toLocaleString()}회`);
+const historyStatCards = computed(() => [
+  {
+    key: 'total',
+    label: '총 뽑기',
+    value: historyTotalLabel.value,
+    suffix: '',
+  },
+  {
+    key: 'common',
+    label: `${rarityConfig.common.label}`,
+    value: `${(historyStats.value.common ?? 0).toLocaleString()} 회`,
+    suffix: '',
+  },
+  {
+    key: 'rare',
+    label: `${rarityConfig.rare.label}`,
+    value: `${(historyStats.value.rare ?? 0).toLocaleString()} 회`,
+    suffix: '',
+  },
+  {
+    key: 'epic',
+    label: `${rarityConfig.epic.label}`,
+    value: `${(historyStats.value.epic ?? 0).toLocaleString()} 회`,
+    suffix: '',
+  },
+  {
+    key: 'legendary',
+    label: `${rarityConfig.legendary.label}`,
+    value: `${(historyStats.value.legendary ?? 0).toLocaleString()} 회`,
+    suffix: '',
+  },
+]);
+
+const isRewardModalVisible = computed(() => showResult.value && Boolean(currentReward.value));
+
 const serverFlowAvailable = computed(() =>
   Boolean(
     memberId.value &&
@@ -386,13 +534,25 @@ onMounted(() => {
   connectWebSocket();
 });
 
+watch(
+  () => eventInfo.value?.id,
+  (eventId) => {
+    if (eventId && stompConnected.value) {
+      subscribeToEventTopic(eventId);
+    }
+    resetHistoryState();
+  },
+);
+
 watch(memberId, (value, oldValue) => {
   if (value && value !== oldValue) {
     initializeGacha();
+    resetHistoryState();
   }
 
   if (!value) {
     resetServerState();
+    resetHistoryState();
   }
 });
 
@@ -505,6 +665,91 @@ function restoreLocalSlots() {
   }
 }
 
+function createDefaultHistoryStats() {
+  return {
+    common: 0,
+    rare: 0,
+    epic: 0,
+    legendary: 0,
+  };
+}
+
+function normalizeHistoryStats(payload) {
+  const base = createDefaultHistoryStats();
+  if (payload && typeof payload === 'object') {
+    Object.keys(base).forEach((key) => {
+      if (payload[key] != null) {
+        base[key] = Number(payload[key]) || 0;
+      }
+    });
+  }
+  return base;
+}
+
+async function openHistoryModal() {
+  showHistoryModal.value = true;
+  historyError.value = '';
+
+  if (historyNeedsRefresh.value || !historyItems.value.length) {
+    await fetchHistory({ reset: true });
+  }
+}
+
+function closeHistoryModal() {
+  showHistoryModal.value = false;
+}
+
+async function fetchHistory({ reset = false, page } = {}) {
+  if (!memberId.value) {
+    historyError.value = '로그인 후 이용해주세요.';
+    historyItems.value = [];
+    historyStats.value = createDefaultHistoryStats();
+    historyHasMore.value = false;
+    historyTotal.value = 0;
+    return;
+  }
+
+  const eventId = eventInfo.value?.id;
+  const targetPage = page ?? (reset ? 1 : historyPage.value + 1);
+
+  if (reset) {
+    historyItems.value = [];
+  }
+
+  historyLoading.value = true;
+  historyError.value = '';
+
+  try {
+    const payload = await fetchMemberDrawHistory(
+      memberId.value,
+      eventId,
+      targetPage,
+      HISTORY_PAGE_SIZE,
+    );
+
+    const entries = Array.isArray(payload?.content) ? payload.content : [];
+    const normalized = entries.map((entry) => mapHistoryItem(entry)).filter(Boolean);
+
+    historyItems.value = reset ? normalized : [...historyItems.value, ...normalized];
+    historyPage.value = payload?.page ?? targetPage;
+    historyHasMore.value = payload?.last === false;
+    historyTotal.value = Number(payload?.totalElements ?? historyItems.value.length);
+    historyStats.value = normalizeHistoryStats(payload?.rarityStats);
+    historyNeedsRefresh.value = false;
+  } catch (error) {
+    console.warn('Failed to fetch draw history', error);
+    historyError.value =
+      error?.response?.data?.message || error?.message || '뽑기 이력을 불러오지 못했습니다.';
+  } finally {
+    historyLoading.value = false;
+  }
+}
+
+async function loadMoreHistory() {
+  if (historyLoading.value || !historyHasMore.value) return;
+  await fetchHistory({ reset: false, page: historyPage.value + 1 });
+}
+
 function normalizePrize(prize) {
   if (!prize) return null;
 
@@ -539,6 +784,65 @@ function normalizePrize(prize) {
     quantity: prize.quantity,
   };
 }
+
+function mapHistoryItem(entry) {
+  if (!entry) return null;
+  const rarity = entry.rarity || rankToRarity(entry.prizeRank);
+  const payload = entry.prizePayload || {};
+  const description =
+    payload.description ||
+    payload.desc ||
+    payload.message ||
+    payload.text ||
+    defaultPrizeDescription(entry.prizeType, entry.prizeName);
+
+  return {
+    id: entry.id,
+    name: entry.prizeName || '보상',
+    rarity: rarityOrder.includes(rarity) ? rarity : 'common',
+    type: typeof entry.prizeType === 'string' ? entry.prizeType.toLowerCase() : 'item',
+    description,
+    wonAt: entry.createdAt,
+  };
+}
+
+function formatHistoryDate(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString('ko-KR', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+async function refreshHistoryAfterDraw() {
+  if (!memberId.value) return;
+  if (showHistoryModal.value) {
+    await fetchHistory({ reset: true, page: 1 });
+  } else {
+    historyNeedsRefresh.value = true;
+  }
+}
+
+function resetHistoryState() {
+  historyItems.value = [];
+  historyStats.value = createDefaultHistoryStats();
+  historyTotal.value = 0;
+  historyPage.value = 1;
+  historyHasMore.value = false;
+  historyNeedsRefresh.value = true;
+  historyError.value = '';
+}
+
+const handleHistoryKeydown = (event) => {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeHistoryModal();
+  }
+};
 
 function rankToRarity(rank) {
   if (rank === 1) return 'legendary';
@@ -767,6 +1071,7 @@ async function handleSlotComplete(slotIndex) {
     wonRewards.value = [...wonRewards.value, { ...reward, wonAt: openedAt }];
     showResult.value = true;
     emit('points-used', LUCKY_DRAW_TICKET_COST);
+    await refreshHistoryAfterDraw();
     scheduleBoardReset();
   } catch (error) {
     loadError.value =
@@ -783,6 +1088,7 @@ function runLocalDraw(slotIndex) {
   wonRewards.value = [...wonRewards.value, { ...reward, wonAt: new Date().toISOString() }];
   showResult.value = true;
   emit('points-used', LUCKY_DRAW_TICKET_COST);
+  refreshHistoryAfterDraw();
 
   const updated = new Set(localRevealedSlots.value);
   updated.add(slotIndex);
@@ -864,23 +1170,51 @@ const closeResultModal = () => {
   showResult.value = false;
 };
 
+function updateBodyScrollLock() {
+  if (typeof document === 'undefined') return;
+  if (isRewardModalVisible.value || showHistoryModal.value) {
+    document.body.classList.add('overflow-hidden');
+  } else {
+    document.body.classList.remove('overflow-hidden');
+  }
+}
+
 watch(
-  () => showResult.value && Boolean(currentReward.value),
+  isRewardModalVisible,
   (isOpen) => {
     if (typeof document === 'undefined') return;
     if (isOpen) {
-      document.body.classList.add('overflow-hidden');
       rewardModalListener.value = handleModalKeydown;
       window.addEventListener('keydown', rewardModalListener.value);
-    } else {
-      document.body.classList.remove('overflow-hidden');
-      if (rewardModalListener.value) {
-        window.removeEventListener('keydown', rewardModalListener.value);
-        rewardModalListener.value = null;
-      }
+    } else if (rewardModalListener.value) {
+      window.removeEventListener('keydown', rewardModalListener.value);
+      rewardModalListener.value = null;
     }
+    updateBodyScrollLock();
   },
   { immediate: true },
+);
+
+watch(
+  showHistoryModal,
+  (isOpen, _, onCleanup) => {
+    if (typeof document === 'undefined') return;
+    if (isOpen) {
+      historyModalListener.value = handleHistoryKeydown;
+      window.addEventListener('keydown', historyModalListener.value);
+    } else if (historyModalListener.value) {
+      window.removeEventListener('keydown', historyModalListener.value);
+      historyModalListener.value = null;
+    }
+    updateBodyScrollLock();
+
+    onCleanup(() => {
+      if (historyModalListener.value) {
+        window.removeEventListener('keydown', historyModalListener.value);
+        historyModalListener.value = null;
+      }
+    });
+  },
 );
 
 function connectWebSocket() {
@@ -895,20 +1229,16 @@ function connectWebSocket() {
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
     onConnect: () => {
+      stompConnected.value = true;
       console.log('✅ WebSocket 연결 성공!');
 
-      // /topic/gacha/updates 구독
-      subscription.value = client.subscribe('/topic/gacha/updates', (message) => {
-        console.log('📨 WebSocket 메시지 수신:', message.body);
-        try {
-          const update = JSON.parse(message.body);
-          handleGachaUpdate(update);
-        } catch (error) {
-          console.error('WebSocket 메시지 파싱 오류:', error);
-        }
-      });
+      if (eventInfo.value?.id) {
+        subscribeToEventTopic(eventInfo.value.id);
+      }
     },
     onDisconnect: () => {
+      stompConnected.value = false;
+      currentTopic.value = '';
       console.log('❌ WebSocket 연결 해제');
     },
     onWebSocketError: (event) => {
@@ -924,26 +1254,51 @@ function connectWebSocket() {
 }
 
 function handleGachaUpdate(update) {
+  if (!update || update.type !== 'DRAW_RESULT' || !update.cellId) {
+    return;
+  }
+
   console.log('🎰 가챠 업데이트 처리:', update);
 
-  // 백엔드에서 브로드캐스트한 셀 업데이트를 반영
-  if (update.cellId && update.status) {
-    const cellIndex = boardCells.value.findIndex(cell => cell.id === update.cellId);
-    if (cellIndex !== -1) {
-      boardCells.value[cellIndex] = {
-        ...boardCells.value[cellIndex],
-        status: update.status,
-        gachaPrizeId: update.prizeId,
-        openedAt: update.openedAt || new Date().toISOString(),
-        openedByMemberId: update.memberId,
-      };
+  const openedAt = update.openedAt || new Date().toISOString();
+  const updatedCells = boardCells.value.map((cell) =>
+    cell.id === update.cellId
+      ? {
+          ...cell,
+          status: 'OPENED',
+          openedAt,
+          openedByMemberId: update.memberId,
+        }
+      : cell,
+  );
 
-      // 보드 셀 업데이트를 트리거하기 위해 배열을 새로 할당
-      boardCells.value = [...boardCells.value];
+  boardCells.value = updatedCells;
+  scheduleBoardReset();
+}
 
-      console.log(`✅ 셀 ${update.cellId} 상태 업데이트 완료`);
-    }
+function subscribeToEventTopic(eventId) {
+  if (!eventId || !stompClient.value?.connected) return;
+
+  const destination = `/topic/gacha/${eventId}`;
+  if (currentTopic.value === destination && subscription.value) {
+    return;
   }
+
+  if (subscription.value) {
+    subscription.value.unsubscribe();
+    subscription.value = null;
+  }
+
+  subscription.value = stompClient.value.subscribe(destination, (message) => {
+    console.log('📨 WebSocket 메시지 수신:', message.body);
+    try {
+      const update = JSON.parse(message.body);
+      handleGachaUpdate(update);
+    } catch (error) {
+      console.error('WebSocket 메시지 파싱 오류:', error);
+    }
+  });
+  currentTopic.value = destination;
 }
 
 function disconnectWebSocket() {
@@ -957,12 +1312,19 @@ function disconnectWebSocket() {
     stompClient.value = null;
   }
 
+  currentTopic.value = '';
+  stompConnected.value = false;
   console.log('🔌 WebSocket 연결 종료');
 }
 
 onBeforeUnmount(() => {
   if (rewardModalListener.value) {
     window.removeEventListener('keydown', rewardModalListener.value);
+    rewardModalListener.value = null;
+  }
+  if (historyModalListener.value) {
+    window.removeEventListener('keydown', historyModalListener.value);
+    historyModalListener.value = null;
   }
   if (typeof document !== 'undefined') {
     document.body.classList.remove('overflow-hidden');
@@ -1413,6 +1775,248 @@ onBeforeUnmount(() => {
 .history-badge {
   margin-left: auto;
   border-radius: 999px;
+}
+
+.history-trigger-card {
+  margin: 1.25rem 0;
+}
+
+.history-trigger {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 20px;
+  border: 1px solid #ede9fe;
+  background: #f8f5ff;
+  padding: 1rem 1.25rem;
+  text-align: left;
+  gap: 1rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.history-trigger:hover {
+  box-shadow: 0 12px 24px rgba(99, 102, 241, 0.15);
+  transform: translateY(-2px);
+}
+
+.history-trigger__eyebrow {
+  font-size: 0.85rem;
+  color: #9a8cfc;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+.history-trigger__title {
+  font-size: 1rem;
+  color: #4a4a68;
+}
+
+.history-trigger__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #7c3aed;
+  font-weight: 600;
+}
+
+.history-trigger__count {
+  font-size: 1.2rem;
+}
+
+.history-trigger__chevron {
+  font-size: 1.4rem;
+}
+
+.history-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+}
+
+.history-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.history-modal__content {
+  position: relative;
+  width: min(640px, calc(100% - 2rem));
+  background: #ffffff;
+  border-radius: 32px;
+  padding: 2.25rem;
+  z-index: 1;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.history-modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #94a3b8;
+}
+
+.history-modal__header h3 {
+  font-size: 1.5rem;
+  margin-top: 0.35rem;
+  color: #0f172a;
+}
+
+.history-modal__eyebrow {
+  font-size: 0.85rem;
+  color: #a78bfa;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.history-modal__subtitle {
+  color: #94a3b8;
+  margin-top: 0.5rem;
+}
+
+.history-modal__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.75rem;
+}
+
+.history-modal__stat-card {
+  border-radius: 20px;
+  border: 1px solid #f1f5f9;
+  background: #f9f9ff;
+  padding: 0.85rem 1rem;
+}
+
+.history-modal__stat-card p {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-bottom: 0.35rem;
+}
+
+.history-modal__stat-card strong {
+  font-size: 1.3rem;
+  color: #4c1d95;
+}
+
+.history-modal__body {
+  border-radius: 24px;
+  border: 1px solid #edf0f7;
+  background: #fafbff;
+  padding: 1.5rem;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.history-modal__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.history-modal__row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid #f1f5f9;
+}
+
+.history-modal__rarity {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #f5f3ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.history-modal__list-text p {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.history-modal__list-text small {
+  color: #94a3b8;
+}
+
+.history-modal__list-meta {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.history-modal__rarity-badge {
+  border-radius: 999px;
+}
+
+.history-modal__error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-radius: 16px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.history-modal__empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #94a3b8;
+}
+
+.history-modal__gift {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+.history-modal__loading {
+  margin-top: 1rem;
+  text-align: center;
+  color: #7c3aed;
+}
+
+.history-modal__footer {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.history-modal__load {
+  border: none;
+  border-radius: 999px;
+  padding: 0.7rem 2rem;
+  background: #7c3aed;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.history-modal__load:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.history-modal__footer-text {
+  color: #94a3b8;
 }
 
 .shadow-soft {
