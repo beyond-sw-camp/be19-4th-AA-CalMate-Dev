@@ -209,18 +209,31 @@ const router = useRouter();
 /* ---------------------------
  * 1) 폼 상태
  * --------------------------- */
+// const form = reactive({
+//   name: '강형규10',
+//   nickname: '',
+//   email: 'k10@gmail.com',
+//   password: 'pw1234!',
+//   passwordConfirm: 'pw1234!',
+//   phone: '010-0000-0000',
+//   birth: '1992-04-12',
+//   gender: 'M',
+//   height: 183,
+//   weight: 90,
+//   bmr: 2000
+// })
 const form = reactive({
-  name: '강형규10',
+  name: '',
   nickname: '',
-  email: 'k10@gmail.com',
-  password: 'pw1234!',
-  passwordConfirm: 'pw1234!',
-  phone: '010-0000-0000',
-  birth: '1992-04-12',
-  gender: 'M',
-  height: 183,
-  weight: 90,
-  bmr: 2000
+  email: '',
+  password: '',
+  passwordConfirm: '',
+  phone: '',
+  birth: '',
+  gender: '',
+  height: 0,
+  weight: 0,
+  bmr: 0
 })
 
 /* ---------------------------
