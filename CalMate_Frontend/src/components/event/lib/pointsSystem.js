@@ -12,7 +12,7 @@ const DEFAULT_POINTS_RULES = {
 };
 
 export const POINTS_RULES = Object.freeze(DEFAULT_POINTS_RULES);
-export const LUCKY_DRAW_TICKET_COST = 150;
+export const LUCKY_DRAW_TICKET_COST = 100;
 
 const dateKey = (value) => {
   if (!value) return null;

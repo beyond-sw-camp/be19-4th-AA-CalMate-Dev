@@ -228,12 +228,10 @@ const statCards = computed(() => [
 /** 하단 포인트 획득 방법 (사진과 동일한 항목/점수표) */
 const pointSources = Object.freeze([
   { id: 'signup', label: '회원가입', points: 100 },
+  { id: 'sign', label: '로그인', points: 10 },
   { id: 'post', label: '게시물 작성', points: 10 },
-  { id: 'share', label: '운동 & 식단 공유', points: 10 },
-  { id: 'kept', label: '식단이나 운동 지켰을 때', points: 30 },
-  { id: 'calendar', label: '캘린더 목표 달성(1개당)', points: 30 },
+  { id: 'share', label: '운동 & 식단 & 일기 작성', points: 5 },
   { id: 'bingoLine', label: '빙고 라인 완성 (라인당)', points: 50 },
-  { id: 'bingoDone', label: '빙고 완성', points: 500 },
 ]);
 
 /** 업적 3단계 (1000/5000/10000) */

@@ -45,10 +45,6 @@
         <span>라인당 보상</span>
         <span>{{ POINTS_RULES.BINGO_LINE }} 포인트</span>
       </div>
-      <div class="footer-row">
-        <span>빙고 완성 보상</span>
-        <span>{{ POINTS_RULES.BINGO_COMPLETE }} 포인트</span>
-      </div>
       <div class="footer-row footer-row--highlight">
         <span>획득한 포인트</span>
         <span>{{ totalPoints }} 포인트</span>

@@ -36,7 +36,7 @@
         <button class="tiny primary" type="button">행운요소!</button>
         <button class="tiny" type="button">🔁</button>
         <button class="tiny" type="button">⚙</button>
-        <a class="coach__more" href="javascript:void(0)">분소리 듣기 →</a>
+        <a class="coach__more" href="javascript:void(0)">쓴소리 듣기 →</a>
       </div>
     </section>
 

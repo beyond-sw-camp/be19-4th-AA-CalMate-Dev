@@ -35,6 +35,11 @@ export async function fetchAllReports() {
   return res.data
 }
 
+export async function fetchReportDetail(id) {
+  const res = await api.get(`/reports/${id}`)
+  return res.data
+}
+
 export async function processReport(id) {
   return api.patch(`/reports/${id}/process`)
 }

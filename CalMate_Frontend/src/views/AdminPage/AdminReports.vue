@@ -56,10 +56,15 @@
     <article class="panel">
       <!-- 비어있을 때 -->
       <EmptyState
-        v-if="pagedRows.length===0"
+        v-if="!loading && pagedRows.length===0"
         title="신고가 없습니다"
         description="조건을 바꿔 다시 검색해 주세요."
       />
+
+      <!-- 로딩 -->
+      <div v-else-if="loading" class="table-loading">
+        신고 목록을 불러오는 중입니다...
+      </div>
 
       <!-- 데이터 있을 때 -->
       <table v-else class="table">
@@ -67,7 +72,11 @@
           <tr>
             <!-- 전체 선택 체크박스 -->
             <th style="width:36px;">
-              <input type="checkbox" :checked="isAllChecked" @change="toggleAll($event.target.checked)" />
+              <input
+                type="checkbox"
+                :checked="isAllChecked"
+                @change="toggleAll($event.target.checked)"
+              />
             </th>
             <th>신고자</th>
             <th>대상</th>
@@ -121,21 +130,25 @@
             <!-- 작업 버튼들 -->
             <td>
               <div class="actions">
-                <!-- 상세(라우팅은 사용자 설정) -->
-                <RouterLink class="btn xs" :to="`/admin/reports/${r.id}`">보기</RouterLink>
+                <!-- ✅ 상세 모달 열기 -->
+                <button class="btn xs" @click="openDetail(r.id)">보기</button>
 
                 <!-- 처리/반려: 상태에 따라 버튼 비활성화 -->
                 <button
                   class="btn xs success"
                   :disabled="r.status!=='pending'"
                   @click="openSingle(r, 'resolve')"
-                >처리</button>
+                >
+                  처리
+                </button>
 
                 <button
                   class="btn xs danger"
                   :disabled="r.status!=='pending'"
                   @click="openSingle(r, 'reject')"
-                >반려</button>
+                >
+                  반려
+                </button>
               </div>
             </td>
           </tr>
@@ -162,6 +175,13 @@
       @ok="applyAction"
       @cancel="confirm.open=false"
     />
+
+    <!-- ✅ 신고 상세 모달 -->
+    <ReportDetailModal
+      v-if="detailOpen"
+      :report-id="detailId"
+      @close="closeDetail"
+    />
   </section>
 </template>
 
@@ -173,14 +193,16 @@ import ConfirmModal from '@/components/admin/ConfirmModal.vue'
 import ReportTypeBadge from '@/components/admin/ReportTypeBadge.vue'
 import ReportStatusBadge from '@/components/admin/ReportStatusBadge.vue'
 import { fetchAllReports, processReport } from '@/api/report'
+import ReportDetailModal from '@/components/admin/ReportDetailModal.vue'
 
+/* ============ 1) 검색/필터/페이지 상태 ============ */
+const query = ref('')           // 검색 키워드(신고자/대상/사유)
+const type = ref('all')         // 유형 필터('all'|'post'|'user')
+const status = ref('all')       // 상태 필터('all'|'pending'|'resolved'|'rejected')
+const page = ref(1)             // 현재 페이지(1-base)
+const pageSize = 10             // 페이지 당 행 수
 
-const query = ref('')
-const type = ref('all')
-const status = ref('all')
-const page = ref(1)
-const pageSize = 10
-
+/* ============ 2) 목록 데이터 ============ */
 const rows = ref([])
 const loading = ref(false)
 
@@ -190,7 +212,7 @@ async function loadReports() {
   loading.value = true
   try {
     const data = await fetchAllReports()
-    const items = data?.items ?? []
+    const items = data?.items ?? data ?? []     // 응답 구조에 따라 items 또는 바로 배열
     rows.value = items.map(mapReportItem)
   } finally {
     loading.value = false
@@ -211,6 +233,7 @@ function mapReportItem(item) {
   }
 }
 
+/* ============ 3) 체크박스 선택 상태(일괄 처리용) ============ */
 const checkedIds = ref([])
 const isAllChecked = computed(() => {
   const ids = pagedRows.value.map(r => r.id)
@@ -232,6 +255,7 @@ function toggleOne(id, checked) {
   }
 }
 
+/* ============ 4) 파생 데이터(필터/검색/페이징) ============ */
 const filtered = computed(() => {
   const q = query.value.toLowerCase().trim()
   return rows.value.filter(r => {
@@ -249,6 +273,7 @@ const start = computed(() => (page.value - 1) * pageSize)
 const end = computed(() => start.value + pageSize)
 const pagedRows = computed(() => filtered.value.slice(start.value, end.value))
 
+/* ============ 5) 검색/초기화 핸들러 ============ */
 function applyFilters() {
   page.value = 1
 }
@@ -259,6 +284,7 @@ function resetFilters() {
   page.value = 1
 }
 
+/* ============ 6) 개별/일괄 처리 모달 ============ */
 const confirm = ref({
   open: false,
   mode: 'single',
@@ -316,7 +342,7 @@ async function applyAction() {
       // 목록 다시 로딩
       await loadReports()
     } else if (action === 'reject') {
-      // ❗ 아직 반려용 API는 없으니까 프론트 상태만 변경
+      // ❗ 아직 반려용 API는 없으므로 프론트 상태만 변경
       rows.value = rows.value.map(r => {
         if (targetIds.includes(r.id)) r.status = 'rejected'
         return r
@@ -328,7 +354,21 @@ async function applyAction() {
   }
 }
 
+/* ============ 7) 신고 상세 모달 상태 ============ */
+const detailOpen = ref(false)
+const detailId = ref(null)
 
+function openDetail(id) {
+  detailId.value = id
+  detailOpen.value = true
+}
+
+function closeDetail() {
+  detailOpen.value = false
+  detailId.value = null
+}
+
+/* ============ 8) 유틸 ============ */
 function initials(name) {
   if (!name) return 'U'
   const parts = String(name).trim().split(/\s+/)
@@ -349,7 +389,6 @@ function formatDate(v) {
   })
 }
 </script>
-
 
 <style scoped>
 /* 레이아웃 여백 */
@@ -405,6 +444,14 @@ function formatDate(v) {
   border-bottom:1px solid #eef2f7;
 }
 .table tbody td{ padding:12px 8px; border-bottom:1px solid #f3f4f6; }
+
+/* 작업 영역 로딩 텍스트 */
+.table-loading {
+  padding: 24px 8px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
 
 /* 셀 내부(아바타+텍스트) */
 .cell{ display:flex; align-items:center; gap:10px; min-width:0; }

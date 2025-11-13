@@ -154,10 +154,15 @@
           ></textarea>
 
           <label>이미지 첨부 (선택, 여러 장 가능)</label>
-          <input type="file" multiple @change="handleFiles" />
+          <input type="file" multiple @change="onReportFiles" />
 
           <div v-if="previewImages.length" class="preview-list">
-            <img v-for="(img, i) in previewImages" :key="i" :src="img" class="preview-img" />
+            <img
+              v-for="(img, i) in previewImages"
+              :key="i"
+              :src="img"
+              class="preview-img"
+            />
           </div>
         </div>
 
@@ -256,7 +261,6 @@ function pickAuthorId(obj) {
 // 2) 없으면 서버로부터 별도 조회 (엔드포인트는 필요 시 바꿔 끼우세요)
 async function fetchAuthorIdFallback(postId) {
   try {
-    // 예: { memberId: 123 }
     const { data } = await api.get(`/community/post/${postId}/author-id`);
     return Number(data?.memberId) || null;
   } catch {
@@ -271,7 +275,6 @@ const openReportModal = async () => {
     return router.push("/sign/signIn");
   }
 
-  // 작성자 ID가 없으면 보조 조회 한 번 더 시도
   if (!offenderId.value) {
     offenderId.value = await fetchAuthorIdFallback(route.params.postId);
   }
@@ -308,7 +311,6 @@ const submitReport = async () => {
       return alert("신고 사유를 선택해주세요.");
     }
 
-    // 마지막 방어
     if (!offenderId.value) {
       offenderId.value = await fetchAuthorIdFallback(route.params.postId);
     }
@@ -319,8 +321,8 @@ const submitReport = async () => {
     const payload = {
       title: String(reportForm.value.title ?? ""),
       contents: String(reportForm.value.content ?? ""),
-      reportedMemberId: numOrNull(offenderId.value),         // member_id2
-      reporterMemberId: numOrNull(userStore.userId),         // member_id
+      reportedMemberId: numOrNull(offenderId.value),
+      reporterMemberId: numOrNull(userStore.userId),
       postId: numOrNull(reportForm.value.postId),
       commentId:
         reportForm.value.commentId === null
@@ -353,7 +355,7 @@ const loadPost = async () => {
   });
 
   post.value = data;
-  offenderId.value = pickAuthorId(data); // 1차 시도
+  offenderId.value = pickAuthorId(data);
 
   form.value = {
     title: data.title,
@@ -370,8 +372,8 @@ const loadComments = async () => {
     `/community/post/${route.params.postId}/comments`,
     { params: { memberId: userStore.userId || 0 } }
   );
-    // 🔥신고 댓글/대댓글 각각 개별적으로 visibility 검사 (부모 영향 X)
-  const applyDeletedLabel = (list) => {
+// 🔥신고 댓글/대댓글 각각 개별적으로 visibility 검사 (부모 영향 X)
+const applyDeletedLabel = (list) => {
     return list.map(c => {
       let newContent;
 
@@ -397,15 +399,14 @@ const loadComments = async () => {
   };
 
   comments.value = applyDeletedLabel(data);
-};  
-  // comments.value = data;
-
+};
 
 /* ---------- 수정/삭제 ---------- */
 const startEdit = () => {
   if (post.value.memberId !== userStore.userId) return;
   isEditing.value = true;
 };
+
 const cancelEdit = () => {
   previews.value = [];
   newImages.value = [];
@@ -459,9 +460,7 @@ const toggleLikePost = async () => {
   liked.value = !liked.value;
   likeCount.value += liked.value ? 1 : -1;
 
-    // ✅ 랭킹 자동 갱신 신호 보내기
   communityStore.triggerRefresh()
-
 };
 const submitComment = async () => {
   if (!userStore.isLoggedIn) {
@@ -484,7 +483,6 @@ onMounted(() => {
   loadComments();
 });
 </script>
-
 
 <style scoped>
 .report-btn {
@@ -520,18 +518,31 @@ onMounted(() => {
 
 .modal-form textarea { min-height: 100px; resize: vertical; }
 
+/* ✅ 신고 미리보기 썸네일 */
 .preview-list {
-  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
 }
 
-.preview-img {
-  width: 90px; height: 90px; border-radius: 10px; object-fit: cover; border: 1px solid #ccc;
+.preview-list .preview-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid #ccc;
 }
-.modal-actions { display: flex; justify-content: center; gap: 10px; margin-top: 18px; }
+
+.modal-actions {
+  display: flex; justify-content: center; gap: 10px; margin-top: 18px;
+}
+
 .modal-btn {
   background: #6c63ff; color: #fff; border: none; padding: 10px 18px;
   border-radius: 8px; cursor: pointer;
 }
+
 .cancel-btn {
   border: 1px solid #aaa; background: #fff; color: #555;
   border-radius: 8px; padding: 10px 18px; cursor: pointer;
@@ -694,8 +705,8 @@ onMounted(() => {
   gap: 12px;
 }
 
-.detail-img,
-.preview-img {
+/* ✅ 본문 상세 이미지(큰 이미지) */
+.detail-img {
   width: 100%;
   border-radius: 12px;
   object-fit: cover;
@@ -706,7 +717,7 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 10px;
 }
-.edit-image-list img {
+.edit-image-list .preview-img {
   width: 140px;
   height: 140px;
   object-fit: cover;

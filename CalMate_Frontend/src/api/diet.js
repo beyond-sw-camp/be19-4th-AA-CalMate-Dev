@@ -69,3 +69,9 @@ export const updateDiet = ({
 export const deleteDiet = id => {
   return api.delete(`/diet-management/delete/${id}`)
 }
+
+export const searchFoods = (keyword = '') => {
+  return api.get('/diet-management/foods/search', {
+    params: { keyword }
+  })
+}

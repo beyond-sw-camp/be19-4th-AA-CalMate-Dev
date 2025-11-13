@@ -93,7 +93,7 @@ const handleAiRecommend = async () => {
     try {
         console.log('AI 서버로 요청을 보냅니다:', payload);
         loading.start();
-        const response = await api.post('http://localhost:8081/ai/diet', payload, {timeout:35000});
+        const response = await api.post('ai/diet', payload, {timeout:35000});
         console.log('AI summary:', response.data.summary);
         aiResponse.value = response.data;
         sessionStorage.setItem('aiDietPlan', JSON.stringify(response.data));

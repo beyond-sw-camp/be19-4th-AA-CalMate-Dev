@@ -9,6 +9,36 @@
       </div>
 
       <div class="modal-body">
+        <div class="field search-field">
+          <label>음식 검색</label>
+          <div class="search-box">
+            <input
+              v-model="searchKeyword"
+              type="text"
+              class="field-input"
+              placeholder="음식 이름을 입력하면 자동으로 검색됩니다"
+              @input="onSearchInput"
+              @focus="onSearchFocus"
+            />
+            <div v-if="showSearchResults && searchResults.length > 0" class="search-results">
+              <div
+                v-for="food in searchResults"
+                :key="food.id"
+                class="search-result-item"
+                @click="selectFood(food)"
+              >
+                <div class="food-name-search">{{ food.name }}</div>
+                <div class="food-info-search">
+                  {{ food.kcal }}kcal | P:{{ food.protein }}g C:{{ food.carbo }}g F:{{ food.fat }}g
+                </div>
+              </div>
+            </div>
+            <div v-if="showSearchResults && searchResults.length === 0 && searchKeyword" class="no-results">
+              검색 결과가 없습니다
+            </div>
+          </div>
+        </div>
+
         <div class="field">
           <label>음식 이름</label>
           <input
@@ -122,6 +152,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import closeIcon from '@/assets/images/close.png'
+import { searchFoods } from '@/api/diet'
 
 const props = defineProps({
   foodData: { type: Object, default: null },
@@ -130,6 +161,12 @@ const props = defineProps({
 const emit = defineEmits(['close', 'save'])
 const fileInput = ref(null)
 const isComposing = ref(false)
+
+// 음식 검색 관련
+const searchKeyword = ref('')
+const searchResults = ref([])
+const showSearchResults = ref(false)
+let searchTimeout = null
 
 // 기존 이미지
 const originalImages = ref(
@@ -195,6 +232,53 @@ const handleNumericInput = (field, e) => {
   form[field] = sanitized
 }
 
+const onSearchInput = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+
+  // 검색어가 없으면 즉시 숨김
+  if (!searchKeyword.value.trim()) {
+    searchResults.value = []
+    showSearchResults.value = false
+    return
+  }
+
+  // 200ms 후 검색 (더 빠른 반응)
+  searchTimeout = setTimeout(async () => {
+    try {
+      const res = await searchFoods(searchKeyword.value)
+      console.log('검색 응답:', res.data)
+      searchResults.value = res.data || []
+      showSearchResults.value = true
+      console.log('searchResults 개수:', searchResults.value.length)
+    } catch (e) {
+      console.error('음식 검색 실패', e)
+      searchResults.value = []
+      showSearchResults.value = false
+    }
+  }, 200)
+}
+
+const onSearchFocus = () => {
+  // 포커스 시 기존 검색어가 있으면 다시 검색
+  if (searchKeyword.value.trim()) {
+    onSearchInput()
+  }
+}
+
+const selectFood = (food) => {
+  form.name = food.name
+  form.kcal = String(food.kcal)
+  form.protein = String(food.protein)
+  form.carb = String(food.carbo)
+  form.fat = String(food.fat)
+
+  searchKeyword.value = ''
+  searchResults.value = []
+  showSearchResults.value = false
+}
+
 const onSubmit = () => {
   if (!form.name || !form.kcal) {
     alert('이름과 칼로리를 입력해주세요.')
@@ -231,6 +315,8 @@ const onSubmit = () => {
   width: 500px;
   max-width: 90%;
   padding: 24px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 .modal-header {
   display: flex;
@@ -256,6 +342,7 @@ const onSubmit = () => {
   display: flex;
   flex-direction: column;
   margin-bottom: 12px;
+  position: relative;
 }
 .field-row {
   display: flex;
@@ -355,5 +442,73 @@ const onSubmit = () => {
 }
 .hidden {
   display: none;
+}
+
+.search-field {
+  position: relative;
+  z-index: 20;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  margin-top: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.search-result-item {
+  padding: 12px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background-color: #f8f8f8;
+}
+
+.food-name-search {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.food-info-search {
+  font-size: 13px;
+  color: #666;
+}
+
+.no-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  padding: 12px 14px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  margin-top: 4px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
 }
 </style>
