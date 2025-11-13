@@ -14,13 +14,13 @@ spec:
     spec:
       containers:
       - name: boot-container
-        image: kang92/cal_mate_back:61
+        image: kang92/cal_mate_back:62
         imagePullPolicy: Always
         ports:
         - containerPort: 8081
         env:
-        # Spring Boot??application.yml???��? mariadb-persist�??�스?�로 ?�용?�도�??�정?�어 ?�으므�?
-        # Kubernetes?�서???�비?�명(mariadb003ser)???�용?�도�??�경변?�로 ?�정?�합?�다.
+        # Spring Boot??application.yml???��? mariadb-persist�??�스?�로 ?�용?�도�??�정?�어 ?�으므�?
+        # Kubernetes?�서???�비?�명(mariadb003ser)???�용?�도�??�경변?�로 ?�정?�합?�다.
         - name: SPRING-DATASOURCE-URL
           value: "jdbc:mariadb://cal-mate-mariadb-ser:3310/calcdb"
         - name: SPRING-DATASOURCE-USERNAME
@@ -28,7 +28,7 @@ spec:
         - name: SPRING-DATASOURCE-PASSWORD
           value: "cal123123"
 
-        # 여기부터 추가
+        # ?�기부??추�?
         volumeMounts:
         - name: backend-storage
           mountPath: /app/uploads
@@ -47,7 +47,7 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 3
 
-        # 컨테?�너가 ?�상?�으�??�행 중인지 ?�인
+        # 컨테?�너가 ?�상?�으�??�행 중인지 ?�인
         livenessProbe:
           httpGet:
             path: /health
@@ -57,7 +57,7 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 3
 
-      # volumes 블록 추가
+      # volumes 블록 추�?
       volumes:
       - name: backend-storage
         persistentVolumeClaim:
