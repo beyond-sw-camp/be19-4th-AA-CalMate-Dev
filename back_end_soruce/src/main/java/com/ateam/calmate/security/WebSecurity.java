@@ -67,6 +67,7 @@ public class WebSecurity {
 //                                        .requestMatchers("/**").permitAll()
                                         .requestMatchers("/ai/**").authenticated()
 
+
                                         .requestMatchers(HttpMethod.POST ,"member/member").permitAll()
                                         .requestMatchers("/member/refresh").permitAll()
                                         .requestMatchers("/member/logout").permitAll()
