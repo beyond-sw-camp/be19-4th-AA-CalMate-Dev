@@ -699,7 +699,7 @@ CREATE TABLE `point` (
 
 -- ----- 제약조건 ----------
 -- ✅ 외래키 검사 다시 활성화
-# SET FOREIGN_KEY_CHECKS = 1;
+SET FOREIGN_KEY_CHECKS = 1;
 
 ALTER TABLE post add CONSTRAINT fk_post_member FOREIGN KEY (member_id) REFERENCES member(id);
 ALTER TABLE post add CONSTRAINT fk_post_tag FOREIGN KEY (tag_id) REFERENCES tag(id);
