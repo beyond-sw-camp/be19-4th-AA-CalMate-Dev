@@ -28,8 +28,8 @@ public class DiaryCommandService {
     private final DiaryRepository diaryRepository;
     private final DiaryFileRepository diaryFileRepository;
 
-    // 실제 파일 저장 디렉토리
-    private static final String UPLOAD_DIR = "uploads/diary";
+    // 실제 파일 저장 디렉토리 (상대 경로)
+    private static final String UPLOAD_DIR = "img/diary";
 
     // ✅ extend_file_path 테이블에서 "일기"용 경로 id로 교체하세요
     private static final long DIARY_EXTEND_FILE_PATH_ID = 3L;
@@ -82,12 +82,28 @@ public class DiaryCommandService {
         diaryRepository.deleteById(diaryId);
     }
 
-    /* ====== 파일 저장 공통 ====== */private void saveFiles(Diary diary, List<MultipartFile> files) {
+    /* ====== 파일 저장 공통 ====== */
+    private void saveFiles(Diary diary, List<MultipartFile> files) {
         if (files == null || files.isEmpty()) return;
 
         try {
-            Path uploadPath = Paths.get(UPLOAD_DIR).toAbsolutePath().normalize();
+            // back_end_soruce 디렉토리 안에 img/diary 경로 생성
+            String baseDir = System.getProperty("user.dir");
+            Path basePath = Paths.get(baseDir);
+
+            // CalMate-Backend에서 실행되는 경우 back_end_soruce 하위로 이동
+            if (!basePath.endsWith("back_end_soruce")) {
+                basePath = basePath.resolve("back_end_soruce");
+            }
+
+            Path uploadPath = basePath.resolve(UPLOAD_DIR).toAbsolutePath().normalize();
             Files.createDirectories(uploadPath);
+
+            System.out.println("=== Diary File Upload Debug ===");
+            System.out.println("Base Directory: " + baseDir);
+            System.out.println("Resolved Path: " + basePath.toString());
+            System.out.println("Upload Path: " + uploadPath.toString());
+            System.out.println("Upload Path exists: " + Files.exists(uploadPath));
 
             for (MultipartFile file : files) {
                 if (file.isEmpty()) continue;

@@ -27,21 +27,24 @@ public class WebConfig implements WebMvcConfigurer {
 
         // 프로필 단건 이미지
         registry.addResourceHandler("/img/single/**")
-                .addResourceLocations("file:" + baseDir + "/img/single/");
+                .addResourceLocations("file:" + backendDir.toString() + "/img/single/");
 
         // 프로필 업로드 경로 (ex: /uploads/profile/)
         registry.addResourceHandler(profileDirPath + "**")
-                .addResourceLocations("file:" + System.getProperty("user.dir") + profileDirPath);
+                .addResourceLocations("file:" + backendDir.toString() + profileDirPath);
 
         registry.addResourceHandler("/img/meal/**")
-                .addResourceLocations("file:" + System.getProperty("user.dir") + "/img/meal/");
+                .addResourceLocations("file:" + backendDir.toString() + "/img/meal/");
 
         registry.addResourceHandler("/img/exercise/**")
-                .addResourceLocations("file:" + System.getProperty("user.dir") + "/img/exercise/");
+                .addResourceLocations("file:" + backendDir.toString() + "/img/exercise/");
+
+        registry.addResourceHandler("/img/diary/**")
+                .addResourceLocations("file:" + backendDir.toString() + "/img/diary/");
 
         // (게시판 이미지, 식단 업로드 이미지, exercise 등)
         registry.addResourceHandler("/img/community/**")
-                .addResourceLocations("file:" + System.getProperty("user.dir") + "/img/community/");
+                .addResourceLocations("file:" + backendDir.toString() + "/img/community/");
 
         // Bingo 및 일반 업로드 파일을 모두 /uploads/** 로 노출
         String bingoUploadDir = backendDir.resolve("img/event/").toUri().toString();
@@ -50,7 +53,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations(bingoUploadDir, legacyUploadsDir);
 
         registry.addResourceHandler("/img/report/**")
-                .addResourceLocations("file:" + System.getProperty("user.dir") + "/img/report/");
+                .addResourceLocations("file:" + backendDir.toString() + "/img/report/");
     }
 
     @Override
