@@ -11,6 +11,9 @@ import os
 
 load_dotenv()
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_PATH = os.path.join(BASE_DIR, "data.csv")
+
 # 1. RAG를 만들기 위해 준비해할거
 
 # Document Loader
@@ -70,7 +73,7 @@ prompt_template = PromptTemplate.from_template(
 
 # 예시 (few-shot)
 # 요청 1
-gender: male, height: 175, weight: 90, type: 감량, target: 80, BMR: 1800, allergyNames: [갑각류, 호두], startDate: 20251111, endDate: 20251211
+gender: male, height: 175.3, weight: 90, type: 감량, target: 80, BMR: 1800, allergyNames: [갑각류, 호두], startDate: 20251111, endDate: 20251211
 
 # 예시 답변 1
 {{
@@ -129,7 +132,7 @@ gender: male, height: 175, weight: 90, type: 감량, target: 80, BMR: 1800, alle
 }}
 
 # 요청 2
-gender: female, height: 160, weight: 40, type: 증량, target: 50, BMR: 1217, allergyNames: [메밀], startDate: 20251111, endDate: 20251124
+gender: female, height: 160.50, weight: 40, type: 증량, target: 50, BMR: 1217, allergyNames: [메밀], startDate: 20251111, endDate: 20251124
 
 # 예시 답변 2
 {{
@@ -241,7 +244,7 @@ def make_qa_chain(retriever, llm):
 # 전체 시스템을 엮어서 내보내기
 def setup_diet_recommend():
     
-    docs = load_csv("../식약처 데이터정제.csv")
+    docs = load_csv(CSV_PATH)
     
     embeddings = make_embeddings()
     

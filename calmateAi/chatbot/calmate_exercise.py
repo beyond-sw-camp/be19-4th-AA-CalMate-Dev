@@ -20,7 +20,7 @@ prompt_template = PromptTemplate.from_template(
 {question}
 
 # 요청 1
-gender: male, height: 180, weight: 90, type: 감량, target: 80, BMR: 1800, startDate: 20251111, endDate: 20251211
+gender: male, height: 180.03, weight: 90, type: 감량, target: 80, BMR: 1800, startDate: 20251111, endDate: 20251211
 
 # 예시 답변 1
 {{
