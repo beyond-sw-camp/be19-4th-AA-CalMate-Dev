@@ -19,8 +19,8 @@ spec:
         ports:
         - containerPort: 8081
         env:
-        # Spring Boot??application.yml???��? mariadb-persist�??�스?�로 ?�용?�도�??�정?�어 ?�으므�?
-        # Kubernetes?�서???�비?�명(mariadb003ser)???�용?�도�??�경변?�로 ?�정?�합?�다.
+        # Spring Boot??application.yml???��? mariadb-persist�??�스?�로 ?�용?�도�??�정?�어 ?�으므�?
+        # Kubernetes?�서???�비?�명(mariadb003ser)???�용?�도�??�경변?�로 ?�정?�합?�다.
         - name: SPRING-DATASOURCE-URL
           value: "jdbc:mariadb://cal-mate-mariadb-ser:3310/calcdb"
         - name: SPRING-DATASOURCE-USERNAME
@@ -28,7 +28,16 @@ spec:
         - name: SPRING-DATASOURCE-PASSWORD
           value: "cal123123"
 
-        # 컨테?�너가 ?�래?�을 받을 준비�? ?�었?��? ?�인
+        # 여기부터 추가
+        volumeMounts:
+        - name: backend-storage
+          mountPath: /app/uploads
+          subPath: uploads
+        - name: backend-storage
+          mountPath: /app/img
+          subPath: img
+
+        # 컨테?�너가 ?�래?�을 받을 준비�? ?�었?��? ?�인
         readinessProbe:
           httpGet:
             path: /health
@@ -38,7 +47,7 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 3
 
-        # 컨테?�너가 ?�상?�으�??�행 중인지 ?�인
+        # 컨테?�너가 ?�상?�으�??�행 중인지 ?�인
         livenessProbe:
           httpGet:
             path: /health
@@ -47,4 +56,10 @@ spec:
           periodSeconds: 15
           timeoutSeconds: 5
           failureThreshold: 3
+
+      # volumes 블록 추가
+      volumes:
+      - name: backend-storage
+        persistentVolumeClaim:
+          claimName: backend-data-pvc
 
