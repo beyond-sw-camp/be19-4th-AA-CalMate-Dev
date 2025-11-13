@@ -227,6 +227,7 @@ public class MemberServiceImpl implements MemberService {
             } else { // 기존 파일이있어서 덮어 쓰기
                 findProfile.setReFileName(responseProfileImageDTO.getReFileName());
                 findProfile.setOriginalFileName(responseProfileImageDTO.getOriginalFileName());
+                findProfile.setFilePath(responseProfileImageDTO.getFilePath());
             }
             profileImageRepository.save(findProfile);
 
