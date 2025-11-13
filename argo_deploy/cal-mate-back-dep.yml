@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: boot-container
-        image: kang92/cal_mate_back:57
+        image: kang92/cal_mate_back:58
         imagePullPolicy: Always
         ports:
         - containerPort: 8081
