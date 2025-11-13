@@ -67,6 +67,7 @@ public class WebSecurity {
 //                                        .requestMatchers("/**").permitAll()
 
 
+                                        .requestMatchers(HttpMethod.POST ,"member/member").permitAll()
                                         .requestMatchers("/member/refresh").permitAll()
                                         .requestMatchers("/member/logout").permitAll()
                                         .requestMatchers(HttpMethod.GET, "/img/**").permitAll()
