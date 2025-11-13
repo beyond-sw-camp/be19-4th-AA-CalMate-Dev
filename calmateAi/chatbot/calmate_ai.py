@@ -73,7 +73,7 @@ prompt_template = PromptTemplate.from_template(
 
 # 예시 (few-shot)
 # 요청 1
-gender: male, height: 175, weight: 90, type: 감량, target: 80, BMR: 1800, allergyNames: [갑각류, 호두], startDate: 20251111, endDate: 20251211
+gender: male, height: 175.3, weight: 90, type: 감량, target: 80, BMR: 1800, allergyNames: [갑각류, 호두], startDate: 20251111, endDate: 20251211
 
 # 예시 답변 1
 {{
@@ -132,7 +132,7 @@ gender: male, height: 175, weight: 90, type: 감량, target: 80, BMR: 1800, alle
 }}
 
 # 요청 2
-gender: female, height: 160, weight: 40, type: 증량, target: 50, BMR: 1217, allergyNames: [메밀], startDate: 20251111, endDate: 20251124
+gender: female, height: 160.50, weight: 40, type: 증량, target: 50, BMR: 1217, allergyNames: [메밀], startDate: 20251111, endDate: 20251124
 
 # 예시 답변 2
 {{

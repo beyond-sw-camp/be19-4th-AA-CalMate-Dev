@@ -10,7 +10,7 @@ from calmate_exercise import setup_exercise_recommend, ask_exercise_question
 
 class AiDietRequest(BaseModel):
     gender: str             
-    height: int              
+    height: float              
     weight: float            
     goalType: str              
     targetValue: float       
@@ -51,7 +51,7 @@ GENDER_MAP_KO = {
 
 def build_question(
     gender: str,
-    height: int,
+    height: float,
     weight: float,
     bmr: int,
     goal_type: str,
@@ -129,7 +129,7 @@ async def recommend_diet_endpoint(request: AiDietRequest):
 
 class AiExerciseRequest(BaseModel):
     gender: str
-    height: int
+    height: float
     weight: float
     goalType: str
     targetValue: float
@@ -139,7 +139,7 @@ class AiExerciseRequest(BaseModel):
 
 def build_exercise_question(
     gender: str,
-    height: int,
+    height: float,
     weight: float,
     bmr: int,
     goal_type: str,
