@@ -68,7 +68,7 @@ const exerciseAiRecommend = async () => {
     try {
         console.log('AI 서버로 요청을 보냅니다:', payload);
         loading.start();
-        const response = await api.post('http://localhost:8081/ai/exercise', payload, {timeout:35000});
+        const response = await api.post('ai/exercise', payload, {timeout:35000});
         aiResponse.value = response.data;
         sessionStorage.setItem('aiExercisePlan', JSON.stringify(response.data));
         console.log('AI 추천 응답 저장 완료:', aiResponse.value);
