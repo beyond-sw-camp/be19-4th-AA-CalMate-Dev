@@ -43,7 +43,7 @@ public class AiDietCommandService {
         log.info("sendRequest={}", sendRequest);
 
         // Fast API로 통신
-        String fastApiUrl = "http://http://fourth-project-ai:8000/api/v1/diet/recommend";
+        String fastApiUrl = "http://fourth-project-ai:8000/api/v1/diet/recommend";
         log.info("AI 서버({})에 식단 추천을 요청합니다...", fastApiUrl);
 
         // AI 응답으로 온 Json을 편집
