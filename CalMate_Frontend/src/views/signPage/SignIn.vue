@@ -4,7 +4,7 @@
       <div class="brand">
         <img class="brand_logo" src="@/assets/images/mainIcon.png" alt="CalMate" />
         <h1 class="brand_title">CalMate</h1>
-        <p class="brand_sub">당신만의 식단 메이커 CalMate에 오신 것을 환영합니다.</p>
+        <p class="brand_sub">당신만의 식단 메이커 CalMate-에 오신 것을 환영합니다.</p>
       </div>
 
       <form class="form" @submit.prevent="signIn">
@@ -57,27 +57,61 @@
       </form>
     </div>
   </div>
+     <!-- 모달 컴포넌트 -->
+  <BaseModal
+        v-model:open="modal.open"
+        :title="modal.title"
+        :message="modal.message"
+        :confirmText="'확인'"
+        :hasFunction="modal.hasFunction"
+        :isError="modal.isError"
+    />
+
 </template>
+
+
+
 
 <script setup>
 import { useRouter,RouterLink  } from 'vue-router';
 import { ref, reactive } from 'vue';
 import { useUserStore } from '@/stores/user';
 import api from '@/lib/api';
+import { generateDeviceFp } from '@/lib/deviceFp';
+    import BaseModal from '@/components/BaseModal.vue' ;
 
 const userStore = useUserStore();
 const router = useRouter();
 const email = ref('jangyoungsil@gmail.com');
 const pwd = ref('pw1234!');
 
+
+    const modal = reactive({
+        open: false,
+        title: '알림',
+        message: '',
+        confirmText: '확인',
+        hasFunction: false ,
+        isError: false 
+    })
+
+    
+    function openModal(msg, title = '알림', isError = false, hasFunction = false) {
+        modal.title = title;
+        modal.message = msg;
+        modal.open = true;
+        modal.hasFunction = hasFunction;
+        modal.isError = isError;
+    }
+
 async function signIn() {
   try{
 
 
     // 로그인 할때 고유 아이디 세션 스토리지에 저장
-    let deviceFp = localStorage.getItem('device_fp');
+    let deviceFp = sessionStorage.getItem('device_fp');
     if (!deviceFp) {
-      deviceFp = crypto.randomUUID();
+      deviceFp = generateDeviceFp();
       sessionStorage.setItem('device_fp', deviceFp);
     }
 

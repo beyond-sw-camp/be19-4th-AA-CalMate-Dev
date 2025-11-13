@@ -319,6 +319,9 @@ async function onSelectAvatar(e){
       return
     }
 
+    // urlPath = urlPath + api.defaults.baseURL;
+
+
     userStore.changeProfile('');
     setTimeout(async() => {
       await userStore.changeProfile(urlPath)

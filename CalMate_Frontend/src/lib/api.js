@@ -36,6 +36,9 @@ const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || 'http://localhost:80
 // ------------------------------------------------------------
 const api = axios.create({
   baseURL: API_BASE_URL,          // 모든 상대 경로 요청은 '/localhost:80'를 기준으로 보낸다. (Vite dev proxy로 백엔드 연결 가정)
+  // baseURL: 'http://localhost:80/back',          // 모든 상대 경로 요청은 '/localhost:80'를 기준으로 보낸다. (Vite dev proxy로 백엔드 연결 가정)
+  // baseURL: '/back',          // 모든 상대 경로 요청은 '/localhost:80'를 기준으로 보낸다. (Vite dev proxy로 백엔드 연결 가정)
+  // baseURL: 'http://localhost:8081',          // 모든 상대 경로 요청은 '/localhost:80'를 기준으로 보낸다. (Vite dev proxy로 백엔드 연결 가정)
   withCredentials: true,    // ✅ 브라우저가 HttpOnly 쿠키(리프레시 토큰)를 자동으로 전송하도록 허용
   timeout: 15000,           // 네트워크 요청 타임아웃(ms). 필요에 따라 조정 가능.
 });
@@ -119,13 +122,15 @@ api.interceptors.response.use(
       if(original.url === refreshUrl)
       {
           
-          console.log('리프래시 이상 ===========')
-          isRefreshing = false;                                  
-          refreshPromise = null;   
-          toastError('이상 접근 감지',{description: '비정상 접근이 갑지 되어 재 로그인 시도 부탁 드립니다.' });
-          const user = useUserStore();     
-          user.logOut();                       
-          await router.push('/') 
+          // console.log('리프래시 이상 ===========')
+          // isRefreshing = false;                                  
+          // refreshPromise = null;   
+          // toastError('이상 접근 감지',{description: '비정상 접근이 갑지 되어 재 로그인 시도 부탁 드립니다.' });
+          // const user = useUserStore();     
+          // user.logOut();                       
+          // await router.push('/')  
+          // 🔥 여기서 끝내야 아래에서 또 /member/refresh 안 감
+          return Promise.reject(error);
       }
 
       // 4-2-4-1) 무한 루프 방지를 위한 커스텀 플래그
