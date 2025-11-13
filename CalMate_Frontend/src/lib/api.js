@@ -11,6 +11,7 @@ import axios from 'axios';                  // axios 본체를 가져온다.
 import { useUserStore } from '@/stores/user'; // Pinia의 사용자 스토어(액세스 토큰을 꺼내오기 위함)
 import { useToast } from '@/lib/toast'
 import router from '@/router/index.routes';
+import { parseJwt, getTokenExpiryDate, isTokenExpired, isTokenExpiringSoon } from '@/lib/jwtUtil';
 
 const {success, error : toastError , info} = useToast();
 // 날짜 한국 시간으로 출력하기
@@ -56,7 +57,7 @@ const api = axios.create({
 let refreshPromise = null;                 // ✔ 진행 중인 리프레시 요청이 없으면 null
 let isRefreshing = false;                  // ✔ (선택) 디버깅용 플래그
 const EXCLUDED_URLS = [                    // ✔ 인터셉터 제외 대상 URL들
-  // '/member/refresh',                       //    - 실제 리프레시 호출 경로
+  '/member/refresh',                       //    - 실제 리프레시 호출 경로
   // '/auth/login',                           //    - 로그인 요청(환경에 맞게 추가/수정)
 ];
 const refreshUrl = '/member/refresh';
@@ -118,20 +119,32 @@ api.interceptors.response.use(
     // 4-2-4) 401 또는 403을 만났고, 아직 이 요청에 대해 재시도 마크를 안 달았다면 처리 시작
     if ((status === 401 || status === 403) && !original._retry) {
 
-      // 리프래시 요청이 에러 났을 경우 로그아웃 실행
-      if(original.url === refreshUrl)
+      const user = useUserStore();
+      console.log('토큰 값::::::', user.token);
+      console.log('토큰 만료 유무', isTokenExpired(user.token));
+
+      if(!isTokenExpired(user.token))
       {
-          
-          // console.log('리프래시 이상 ===========')
-          // isRefreshing = false;                                  
-          // refreshPromise = null;   
-          // toastError('이상 접근 감지',{description: '비정상 접근이 갑지 되어 재 로그인 시도 부탁 드립니다.' });
-          // const user = useUserStore();     
-          // user.logOut();                       
-          // await router.push('/')  
-          // 🔥 여기서 끝내야 아래에서 또 /member/refresh 안 감
-          return Promise.reject(error);
+        return Promise.reject(error);
       }
+
+      // payload.exp  <-- 여기서 exp 꺼낼 수 있음
+
+
+      // 리프래시 요청이 에러 났을 경우 로그아웃 실행
+      // if(original.url === refreshUrl)
+      // {
+      //     console.log('=============리프래시 에러 나는곳 탐===================')
+      //     // console.log('리프래시 이상 ===========')
+      //     // isRefreshing = false;                                  
+      //     // refreshPromise = null;   
+      //     // toastError('이상 접근 감지',{description: '비정상 접근이 갑지 되어 재 로그인 시도 부탁 드립니다.' });
+      //     // const user = useUserStore();     
+      //     // user.logOut();                       
+      //     // await router.push('/')  
+      //     // 🔥 여기서 끝내야 아래에서 또 /member/refresh 안 감
+      //     return Promise.reject(error);
+      // }
 
       // 4-2-4-1) 무한 루프 방지를 위한 커스텀 플래그
       original._retry = true;

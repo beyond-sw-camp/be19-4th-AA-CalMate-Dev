@@ -319,13 +319,10 @@ async function onSelectAvatar(e){
       return
     }
 
-    // urlPath = urlPath + api.defaults.baseURL;
-
-
     userStore.changeProfile('');
     setTimeout(async() => {
-      await userStore.changeProfile(urlPath)
-      avatarUrl.value = urlPath;
+      await userStore.changeProfile(api.defaults.baseURL + urlPath)
+      avatarUrl.value = api.defaults.baseURL + urlPath;
     },300)
   } catch (err) {
     console.error(err)
