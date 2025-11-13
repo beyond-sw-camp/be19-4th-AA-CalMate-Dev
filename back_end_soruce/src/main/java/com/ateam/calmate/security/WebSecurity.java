@@ -25,6 +25,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Collections;
 import java.util.List;
 
+
 @Configuration
 public class WebSecurity {
 
@@ -67,7 +68,7 @@ public class WebSecurity {
 //                                        .requestMatchers("/**").permitAll()
                                         .requestMatchers("/ai/**").permitAll()
 
-                                        .requestMatchers(HttpMethod.POST ,"member/member").permitAll()
+
                                         .requestMatchers("/member/refresh").permitAll()
                                         .requestMatchers("/member/logout").permitAll()
                                         .requestMatchers(HttpMethod.GET, "/img/**").permitAll()
@@ -121,7 +122,7 @@ public class WebSecurity {
 //                                        .requestMatchers(HttpMethod.GET, "/member/**").hasRole("ADMIN")
 //                                        .requestMatchers(HttpMethod.GET, "/users/**").hasAnyRole("ENTERPRISE","ADMIN")
 //                                        .requestMatchers(HttpMethod.GET, "/test1/**", "/test2/**").hasAnyRole("ENTERPRISE","ADMIN")
-                                        .anyRequest().authenticated()
+//                                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
