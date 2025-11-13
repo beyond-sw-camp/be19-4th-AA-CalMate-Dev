@@ -11,6 +11,9 @@ import os
 
 load_dotenv()
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_PATH = os.path.join(BASE_DIR, "data.csv")
+
 # 1. RAG를 만들기 위해 준비해할거
 
 # Document Loader
@@ -241,7 +244,7 @@ def make_qa_chain(retriever, llm):
 # 전체 시스템을 엮어서 내보내기
 def setup_diet_recommend():
     
-    docs = load_csv("../식약처 데이터정제.csv")
+    docs = load_csv(CSV_PATH)
     
     embeddings = make_embeddings()
     
