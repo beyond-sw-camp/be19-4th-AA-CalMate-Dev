@@ -49,7 +49,7 @@ token:
   access:
     secret: v7o98gdK42iddFqTxH07Yjv18KbwIZWQZu7NRPeR9+ji9tOGDX2r8PO3mGptklEdEiIB0RMT066q3qb19YBfqQ==
 #    expiration_time: 600000 # 10 분
-    expiration_time: 6000 # 1 분
+    expiration_time: 600000 # 1 분
   refresh:
     secret: QUohbgcqwRhk+Xi7zbhgWrkGA0SFRI6OIjzjOsPMtXN5G6RtwBuX0UKENxM07M9WRQBnSuvmU3J4GEpPzqWj/w==
     expiration_time: 86400000 # 1 일 [ms] 단위
@@ -73,7 +73,8 @@ app:
   cookie:
     domain: calMate.com
 mybatis:
-  mapper-locations: classpath*:mapper/**/*.xml
+  mapper-locations: classpath*:com/ateam/calmate/**/mapper/*Mapper.xml
+#  mapper-locations: classpath*:mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
 
@@ -82,4 +83,4 @@ profile:
   dirPath: /img/profile/
 
 #mybatis:
-#  mapper-locations: classpath*:com/ateam/calmate/**/mapper/*Mapper.xml
+
