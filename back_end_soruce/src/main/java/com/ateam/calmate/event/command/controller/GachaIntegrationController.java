@@ -1,4 +1,4 @@
-package com.ateam.calmate.event.controller.gacha;
+package com.ateam.calmate.event.command.controller;
 
 import com.ateam.calmate.event.command.service.gacha.GachaBoardCommandService;
 import com.ateam.calmate.event.query.dto.gacha.GachaDrawLogDTO;
@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,6 +24,7 @@ public class GachaIntegrationController {
 
     private final GachaEventQueryService eventQueryService;
     private final GachaBoardCommandService boardCommandService;
+    private final com.ateam.calmate.event.command.service.gacha.GachaCommandService gachaCommandService;
 
     @GetMapping("/event/active")
     public ResponseEntity<GachaEventDTO> getActiveEvent() {
@@ -44,8 +46,12 @@ public class GachaIntegrationController {
     }
 
     @GetMapping("/member/{memberId}/event/{eventId}/board")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<GachaBoardResponse> getBoardSnapshot(@PathVariable Long memberId,
                                                               @PathVariable Long eventId) {
+        // 초기 보드가 없으면 자동 생성
+        boardCommandService.ensureInitialBoardExists(eventId);
+
         return eventQueryService.getBoardSnapshot(eventId)
                 .map(snapshot -> ResponseEntity.ok(
                         new GachaBoardResponse(
@@ -82,15 +88,31 @@ public class GachaIntegrationController {
         int pageIndex = Math.max(page - 1, 0);
         int pageSize = Math.min(Math.max(size, 1), 50);
         Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<GachaDrawLogDTO> history = boardCommandService.findMemberHistory(memberId, eventId, pageable);
+        GachaBoardCommandService.GachaDrawHistoryResult result = boardCommandService.findMemberHistory(memberId, eventId, pageable);
+        Page<GachaDrawLogDTO> history = result.page();
         return new PageResponse<>(
                 history.getContent(),
                 history.getNumber() + 1,
                 history.getSize(),
                 history.getTotalElements(),
                 history.getTotalPages(),
-                history.isLast()
+                history.isLast(),
+                result.rarityStats()
         );
+    }
+
+    /**
+     * 가챠 뽑기 (포인트 차감 포함)
+     * POST /api/gacha/event/{eventId}/draw
+     */
+    @PostMapping("/event/{eventId}/draw")
+    public ResponseEntity<com.ateam.calmate.event.command.dto.gacha.GachaDrawResult> drawGacha(
+            @PathVariable Long eventId,
+            @RequestParam Long memberId,
+            @RequestParam Long cellId) {
+        com.ateam.calmate.event.command.dto.gacha.GachaDrawResult result =
+                gachaCommandService.draw(eventId, memberId, cellId);
+        return ResponseEntity.ok(result);
     }
 
     public record GachaBoardResponse(
@@ -108,6 +130,7 @@ public class GachaIntegrationController {
             int size,
             long totalElements,
             int totalPages,
-            boolean last
+            boolean last,
+            Map<String, Long> rarityStats
     ) {}
 }

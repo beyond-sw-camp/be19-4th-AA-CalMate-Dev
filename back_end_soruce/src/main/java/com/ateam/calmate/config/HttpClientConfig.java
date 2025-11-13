@@ -1,4 +1,4 @@
-//package com.ateam.calmate.config;
+package com.ateam.calmate.config;//package com.ateam.calmate.config;
 //
 //import org.springframework.context.annotation.Bean;
 //import org.springframework.context.annotation.Configuration;
