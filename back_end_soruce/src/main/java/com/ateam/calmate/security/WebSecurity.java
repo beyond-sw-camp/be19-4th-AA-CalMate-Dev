@@ -74,7 +74,7 @@ public class WebSecurity {
                                         .requestMatchers("/health").permitAll()
 
                                         .requestMatchers(HttpMethod.GET, "/community/posts").permitAll()
-                                                                                .requestMatchers("/api/calendar/**").permitAll()
+                                        .requestMatchers("/api/calendar/**").permitAll()
                                         .requestMatchers(HttpMethod.GET, "/community/post/*").permitAll()
                                         .requestMatchers(HttpMethod.GET, "/community/post/*/comments").permitAll()
                                         .requestMatchers(HttpMethod.GET, "/community/ranking").permitAll()
@@ -160,6 +160,3 @@ public class WebSecurity {
 
 
 }
-
-
-

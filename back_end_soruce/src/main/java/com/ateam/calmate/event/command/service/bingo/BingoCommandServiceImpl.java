@@ -122,12 +122,9 @@ public class BingoCommandServiceImpl implements BingoCommandService {
         long totalRewardedLines = lineRewardRepo.countByBoardId(board.getId());
         board.setCompletedLineCount((int) totalRewardedLines);
 
-        // 보드 완전 완성 보너스 지급 (한 번만)
+        // 보드 완전 완성 상태 업데이트 (포인트 지급 없이 상태만 변경)
         boolean wasBoardCompleted = Boolean.TRUE.equals(board.getCompleted());
         if (progress.isCompleted() && !wasBoardCompleted) {
-            pointsPort.addPoints(board.getMemberId(), boardBonusPoint, "BINGO_BOARD_COMPLETE");
-            recordPointHistory(board, boardBonusPoint, Point.Distinction.EARN);
-            points += boardBonusPoint;
             board.setCompleted(true);
         }
 
