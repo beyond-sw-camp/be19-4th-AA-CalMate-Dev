@@ -29,7 +29,7 @@ const formattedTimeForKor =  () => {
   return formatted;
 }
 
-const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || 'http://localhost:8081').replace(/\/$/, '');
+export const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || 'http://localhost:8081').replace(/\/$/, '');
 
 // ------------------------------------------------------------
 // 1) 전역에서 쓸 Axios 인스턴스 1개 생성

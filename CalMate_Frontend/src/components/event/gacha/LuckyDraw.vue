@@ -275,10 +275,11 @@ import { drawReward as drawRewardFallback } from '../lib/rewardsData.js';
 import { LUCKY_DRAW_TICKET_COST } from '../lib/pointsSystem.js';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { API_BASE_URL } from '@/lib/api';
+import api from '@/lib/api';
 
-const DEFAULT_API_BASE_URL = 'http://localhost:8081';
-const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, '');
 const WS_BASE_URL = (import.meta.env?.VITE_WS_BASE_URL || API_BASE_URL).replace(/\/$/, '');
+const HTTP_BASE_URL = (api.defaults.baseURL || API_BASE_URL || '').replace(/\/$/, '');
 
 const props = defineProps({
   availablePoints: {
@@ -1109,8 +1110,9 @@ function getRewardImage(reward) {
   if (!reward) return null;
 
   const directImage = reward.imageUrl || reward.payload?.imageUrl;
-  if (isValidAssetUrl(directImage)) {
-    return directImage;
+  const resolvedDirectImage = resolveAssetUrl(directImage);
+  if (resolvedDirectImage) {
+    return resolvedDirectImage;
   }
 
   if (rewardNameImageMap[reward.name]) {
@@ -1125,12 +1127,12 @@ function getRewardImage(reward) {
   return DEFAULT_REWARD_IMAGE;
 }
 
-function isValidAssetUrl(value) {
-  if (!value || typeof value !== 'string') return false;
-  if (/^https?:\/\//i.test(value)) return true;
-  if (value.startsWith('data:')) return true;
-  if (value.startsWith('/')) return true;
-  return false;
+function resolveAssetUrl(value) {
+  if (!value || typeof value !== 'string') return null;
+  if (/^https?:\/\//i.test(value) || value.startsWith('data:')) return value;
+  const normalized = value.startsWith('/') ? value : `/${value}`;
+  if (!HTTP_BASE_URL) return normalized;
+  return `${HTTP_BASE_URL}${normalized}`;
 }
 
 const isBoardFullyRevealed = () => {
