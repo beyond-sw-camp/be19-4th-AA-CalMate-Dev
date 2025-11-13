@@ -43,7 +43,7 @@ public class ProfileImageService {
 
         String mimeType = singleFile.getContentType();
         ResponseProfileImageDTO responseProfileImageDTO
-                = new ResponseProfileImageDTO(id ,mimeType, uploadDir,"ACTIVE", originFileName
+                = new ResponseProfileImageDTO(id ,mimeType, dirPath,"ACTIVE", originFileName
                 ,reName,1L, urlImagePath, true,"");
 
         return responseProfileImageDTO;
