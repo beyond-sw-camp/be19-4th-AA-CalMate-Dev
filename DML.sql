@@ -1056,7 +1056,7 @@ VALUES
     (1, 3, 15),
     (1, 4, 80);
 
-INSERT INTO `calmate`.`gacha_prize_inventory`
+INSERT INTO `gacha_prize_inventory`
 (`id`, `event_id`, `prize_tier`, `status`, `used_by`, `used_at`, `created_at`)
 VALUES
     -- ★ Legendary (1개)
