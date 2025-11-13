@@ -370,8 +370,36 @@ const loadComments = async () => {
     `/community/post/${route.params.postId}/comments`,
     { params: { memberId: userStore.userId || 0 } }
   );
-  comments.value = data;
-};
+    // 🔥신고 댓글/대댓글 각각 개별적으로 visibility 검사 (부모 영향 X)
+  const applyDeletedLabel = (list) => {
+    return list.map(c => {
+      let newContent;
+
+      if (c.visibility === 1) {
+        if (c.parentId == null) {
+          // 부모 댓글
+          newContent = "삭제된 댓글입니다.";
+        } else {
+          // 대댓글
+          newContent = "삭제된 댓글입니다.";
+        }
+      } else {
+        // visibility = 0 → 원래 내용 유지
+        newContent = c.content;
+      }
+
+      return {
+        ...c,
+        content: newContent,
+        replies: c.replies ? applyDeletedLabel(c.replies) : []
+      };
+    });
+  };
+
+  comments.value = applyDeletedLabel(data);
+};  
+  // comments.value = data;
+
 
 /* ---------- 수정/삭제 ---------- */
 const startEdit = () => {
@@ -383,6 +411,14 @@ const cancelEdit = () => {
   newImages.value = [];
   isEditing.value = false;
 };
+
+const deletePost = async () => {
+  if (post.value.memberId !== userStore.userId) return
+  if (!confirm("정말 삭제하시겠습니까?")) return
+  await api.delete(`/community/post/${route.params.postId}`)
+  router.push("/community")
+}
+
 const saveEdit = async () => {
   try {
     saving.value = true;
@@ -410,8 +446,8 @@ const saveEdit = async () => {
 };
 
 /* ---------- 좋아요/댓글 액션 ---------- */
-
 import { useCommunityStore } from '@/stores/community'
+
 const communityStore = useCommunityStore()
 
 const toggleLikePost = async () => {

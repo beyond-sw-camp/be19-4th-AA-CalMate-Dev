@@ -65,7 +65,9 @@ const posts = ref([])
 // ✅ API로 목록 불러오기
 onMounted(async () => {
   const res = await fetchPostList()
-  posts.value = res.data
+
+  // 🔥 신고되어 visibility=1 인 게시글 자동 숨김
+  posts.value = res.data.filter(p => p.visibility === 0)
 })
 
 // ✅ 필터링
