@@ -51,10 +51,6 @@
           <option value="high">높음</option>
         </select>
 
-        <!-- 일괄 처리: 선택 항목 종료 -->
-        <button class="btn danger" :disabled="checkedIds.length===0" @click="openBulkClose">
-          선택 종료
-        </button>
       </div>
     </div>
 
@@ -71,10 +67,6 @@
       <table v-else class="table">
         <thead>
           <tr>
-            <!-- 전체 선택 체크박스(현재 페이지 기준) -->
-            <th style="width:36px;">
-              <input type="checkbox" :checked="isAllChecked" @change="toggleAll($event.target.checked)" />
-            </th>
             <!-- 작성자/제목/우선순위/상태/시간/작업 -->
             <th>작성자</th>
             <th>제목</th>
@@ -87,15 +79,6 @@
         <tbody>
           <!-- 현재 페이지 행만 렌더링 -->
           <tr v-for="q in pagedRows" :key="q.id">
-            <!-- 개별 체크박스 -->
-            <td>
-              <input
-                type="checkbox"
-                :value="q.id"
-                :checked="checkedIds.includes(q.id)"
-                @change="toggleOne(q.id, $event.target.checked)"
-              />
-            </td>
 
             <!-- 작성자(아바타 이니셜 + 이름) -->
             <td class="cell">
@@ -115,32 +98,20 @@
             <!-- 시간(상대 표기 예: 2시간 전) -->
             <td>{{ q.when }}</td>
 
-            <!-- 작업 버튼: 보기/답변/종료/재오픈 -->
+            <!-- 작업 버튼: 보기/답변 -->
             <td>
               <div class="actions">
-                <!-- 상세보기(라우팅은 사용자가 구성) -->
-                <RouterLink class="btn xs" :to="`/admin/inquiries/${q.id}`">보기</RouterLink>
+                <!-- 상세보기 (회원 페이지의 상세 보기로 이동) -->
+                <button
+                  class="btn xs"
+                  @click="viewDetail(q.id)"
+                >보기</button>
 
-                <!-- 답변: 대기중/종료 외 상태에서만 비활성화 처리 예시 -->
+                <!-- 답변 등록/수정 -->
                 <button
                   class="btn xs success"
-                  :disabled="q.status==='closed'"
                   @click="openReply(q)"
                 >답변</button>
-
-                <!-- 종료: 대기중/답변완료에서 가능 -->
-                <button
-                  class="btn xs danger"
-                  :disabled="q.status==='closed'"
-                  @click="openSingleClose(q)"
-                >종료</button>
-
-                <!-- 재오픈: 종료 상태에서만 가능 -->
-                <button
-                  class="btn xs warn"
-                  :disabled="q.status!=='closed'"
-                  @click="reopen(q)"
-                >재오픈</button>
               </div>
             </td>
           </tr>
@@ -168,28 +139,23 @@
       @submit="submitReply"
     />
 
-    <!-- 확인 모달: 종료(개별/일괄) 공용 -->
-    <ConfirmModal
-      v-if="confirm.open"
-      :title="confirm.title"
-      :message="confirm.message"
-      :ok-text="confirm.okText"
-      :cancel-text="'취소'"
-      @ok="applyClose"
-      @cancel="confirm.open=false"
-    />
   </section>
 </template>
 
 <script setup>
 // Vue 구성요소/도구 임포트
-import { ref, computed } from 'vue'                              // 반응형 상태와 계산 속성
+import { ref, computed, onMounted } from 'vue'                   // 반응형 상태와 계산 속성
+import { useRouter } from 'vue-router'
+import { useToast } from '@/lib/toast.js'
 import EmptyState from '@/components/admin/EmptyState.vue'       // 빈 상태 공통
 import PaginationLite from '@/components/admin/PaginationLite.vue' // 페이지네이션 공통
-import ConfirmModal from '@/components/admin/ConfirmModal.vue'     // 확인 모달 공통
 import ReplyModal from '@/components/admin/ReplyModal.vue'         // 답변 입력 모달
 import InquiryStatusBadge from '@/components/admin/InquiryStatusBadge.vue' // 상태 배지 공통
 import PriorityBadge from '@/components/admin/PriorityBadge.vue'            // 우선순위 배지 공통
+import { getQnaList, createQnaComment, updateQnaComment } from '@/api/qna'
+
+const router = useRouter()
+const { success, error: toastError } = useToast()
 
 /* =========================================
    1) 검색/필터/페이징 상태
@@ -206,47 +172,53 @@ const page = ref(1)                      // 페이지네이션 현재 페이지
 const pageSize = 10                      // 고정 페이지 크기
 
 /* =========================================
-   2) 목록 데이터(데모)
-   실제 환경에서는 API로 교체
+   2) 목록 데이터(API에서 로드)
 ========================================= */
-// 각 항목: { id, author, title, content, priority, status, when }
-const rows = ref([
-  { id: 501, author: '김철수', title: '비밀번호 변경 방법 문의',    content: '어디서 변경하나요?', priority: 'normal', status: 'pending',  when: '2시간 전' },
-  { id: 502, author: '이영희', title: '포인트 적립 오류',          content: '결제했는데 포인트 미적립', priority: 'high',   status: 'pending',  when: '어제' },
-  { id: 503, author: '박민수', title: '닉네임 변경 제한 횟수?',    content: '몇 번까지 가능한가요', priority: 'low',    status: 'answered', when: '3일 전' },
-  { id: 504, author: '홍길동', title: '휴면 해제는 어떻게?',       content: '로그인 안돼요', priority: 'normal', status: 'closed',   when: '1주 전' },
-])
+// 각 항목: { id, author, title, content, priority, status, when, comments }
+const rows = ref([])
+const isLoading = ref(false)
 
-/* =========================================
-   3) 체크박스(일괄 종료용)
-========================================= */
-// 선택된 문의 id 배열
-const checkedIds = ref([])               // 현재 선택된 id들
-// 현재 페이지의 모든 행이 선택되었는지 여부
-const isAllChecked = computed(() => {
-  const ids = pagedRows.value.map(r=>r.id)                 // 현재 페이지 id 배열
-  return ids.length>0 && ids.every(id => checkedIds.value.includes(id)) // 모두 포함되는지 확인
+// API에서 Q&A 목록 로드
+async function loadQnaList() {
+  isLoading.value = true
+  try {
+    const res = await getQnaList({ limit: 100, offset: 0 })
+    const data = res?.data || []
+
+    rows.value = data.map(item => {
+      // 관리자(memberId=2)의 답변 여부 확인
+      const hasAnswer = item.comments?.some(c =>
+        String(c.memberId) === '2' && (!c.parentCommentId || Number(c.parentCommentId) === 0)
+      )
+
+      return {
+        id: item.id,
+        author: item.memberId ? `회원${item.memberId}` : '일반회원',
+        title: item.title,
+        content: item.contents,
+        priority: 'normal', // 우선순위는 추후 필요시 백엔드에서 제공
+        status: hasAnswer ? 'answered' : 'pending',
+        when: timeAgo(item.createdAt),
+        createdAt: item.createdAt,
+        comments: item.comments || []
+      }
+    })
+  } catch (e) {
+    console.error('Failed to load QnA list', e)
+    toastError('문의 목록을 불러오는데 실패했습니다')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 컴포넌트 마운트 시 데이터 로드
+onMounted(() => {
+  loadQnaList()
 })
-// 현재 페이지 전체 선택/해제
-function toggleAll(checked){
-  const ids = pagedRows.value.map(r=>r.id)                 // 현재 페이지 id 배열
-  if(checked){
-    checkedIds.value = Array.from(new Set([...checkedIds.value, ...ids])) // 중복 제거 병합
-  }else{
-    checkedIds.value = checkedIds.value.filter(id => !ids.includes(id))   // 현재 페이지 것 제거
-  }
-}
-// 개별 토글
-function toggleOne(id, checked){
-  if(checked){
-    if(!checkedIds.value.includes(id)) checkedIds.value.push(id)          // 없으면 추가
-  }else{
-    checkedIds.value = checkedIds.value.filter(x=>x!==id)                 // 있으면 제거
-  }
-}
+
 
 /* =========================================
-   4) 파생 데이터(검색/필터/페이징)
+   3) 파생 데이터(검색/필터/페이징)
 ========================================= */
 // 검색/필터 반영된 배열
 const filtered = computed(() => {
@@ -266,7 +238,7 @@ const end   = computed(() => start.value + pageSize)                // 0-base �
 const pagedRows = computed(() => filtered.value.slice(start.value, end.value)) // slice로 분할
 
 /* =========================================
-   5) 검색/리셋 처리
+   4) 검색/리셋 처리
 ========================================= */
 // 검색 적용: 파생계산이라 페이지만 1로 리셋
 function applyFilters(){ page.value = 1 }                            // 첫 페이지로 이동
@@ -274,7 +246,7 @@ function applyFilters(){ page.value = 1 }                            // 첫 페�
 function resetFilters(){ query.value=''; status.value='all'; priority.value='all'; page.value=1 } // 초기화
 
 /* =========================================
-   6) 답변 모달(작성/전송)
+   5) 답변 모달(작성/전송)
 ========================================= */
 // 답변 모달 상태 객체
 const reply = ref({
@@ -282,71 +254,67 @@ const reply = ref({
   target: null,                // 대상 문의 객체
   content: ''                  // 작성 중인 답변 본문
 })
+// 상세보기 (회원 페이지로 이동)
+function viewDetail(qnaId) {
+  router.push(`/main/qna/${qnaId}`)
+}
+
 // 답변 모달 열기
 function openReply(row){
   reply.value.open = true              // 모달 표시
   reply.value.target = row            // 대상 설정
-  reply.value.content = ''            // 내용 초기화(상황에 따라 초안 채우기 가능)
-}
-// 답변 전송(데모: 로컬 상태만 변경, 실제는 API 호출 후 rows 갱신)
-function submitReply(){
-  const q = reply.value.target                                    // 대상 문의
-  if(!q) return                                                   // 안전 가드
-  // 실제 환경: 여기서 POST /inquiries/:id/reply 같은 API 호출
-  q.status = 'answered'                                           // 상태를 '답변완료'로 변경(데모)
-  reply.value.open = false                                        // 모달 닫기
-}
 
-/* =========================================
-   7) 종료(개별/일괄) + 재오픈
-========================================= */
-// 확인 모달 상태 객체
-const confirm = ref({
-  open: false,                // 모달 열림 여부
-  mode: 'single',             // 'single' | 'bulk'
-  ids: [],                    // 대상 id 배열
-  title: '',                  // 모달 제목
-  message: '',                // 모달 본문
-  okText: '확인'              // 확인 버튼 라벨
-})
-// 개별 종료 모달 열기
-function openSingleClose(row){
-  confirm.value.open = true                                 // 모달 열기
-  confirm.value.mode = 'single'                             // 개별 모드
-  confirm.value.ids = [row.id]                              // 대상 id 1개
-  confirm.value.title = '문의 종료'                          // 제목
-  confirm.value.message = `${row.author} - "${row.title}"\n해당 문의를 종료할까요?` // 본문
-  confirm.value.okText = '종료'                              // 버튼 라벨
+  // 기존 답변이 있으면 로드
+  const adminComment = row.comments?.find(c =>
+    String(c.memberId) === '2' && (!c.parentCommentId || Number(c.parentCommentId) === 0)
+  )
+  reply.value.content = adminComment?.comment || '' // 기존 답변 또는 빈 문자열
 }
-// 일괄 종료 모달 열기
-function openBulkClose(){
-  if(checkedIds.value.length===0) return                    // 선택 없으면 무시
-  confirm.value.open = true                                 // 모달 열기
-  confirm.value.mode = 'bulk'                               // 일괄 모드
-  confirm.value.ids = [...checkedIds.value]                 // 대상 id들
-  confirm.value.title = '선택 문의 종료'                      // 제목
-  confirm.value.message = `선택된 ${checkedIds.value.length}건을 종료할까요?` // 본문
-  confirm.value.okText = '일괄 종료'                         // 버튼 라벨
-}
-// 모달 확인 시 종료 적용(데모: 로컬 변경, 실제는 API 후 rows 갱신)
-function applyClose(){
-  const ids = new Set(confirm.value.ids)                    // 빠른 포함 검사 위해 Set화
-  rows.value = rows.value.map(r => {                        // 전체 행 순회
-    if(ids.has(r.id)){                                      // 대상이면
-      r.status = 'closed'                                   // 상태를 종료로 변경
+// 답변 전송
+async function submitReply(){
+  const q = reply.value.target
+  if(!q) return
+
+  const content = (reply.value.content || '').trim()
+  if (!content) {
+    toastError('답변 내용을 입력해주세요')
+    return
+  }
+
+  try {
+    const adminMemberId = 2 // 관리자 계정 ID
+
+    // 기존 답변 찾기
+    const adminComment = q.comments?.find(c =>
+      String(c.memberId) === '2' && (!c.parentCommentId || Number(c.parentCommentId) === 0)
+    )
+
+    if (adminComment) {
+      // 기존 답변 수정
+      await updateQnaComment({ commentId: adminComment.id, comment: content })
+      success('답변이 수정되었습니다')
+    } else {
+      // 새 답변 등록
+      await createQnaComment({
+        qnaId: q.id,
+        memberId: adminMemberId,
+        comment: content,
+        parentCommentId: null
+      })
+      success('답변이 등록되었습니다')
     }
-    return r                                                // 수정 후 반환
-  })
-  checkedIds.value = []                                     // 선택 초기화
-  confirm.value.open = false                                // 모달 닫기
-}
-// 재오픈: 종료 → 대기중으로 변경(데모 로컬)
-function reopen(row){
-  row.status = 'pending'                                    // 상태 되돌림
+
+    // 목록 새로고침
+    await loadQnaList()
+    reply.value.open = false
+  } catch (e) {
+    console.error('Reply submit failed', e)
+    toastError('답변 저장 중 오류가 발생했습니다')
+  }
 }
 
 /* =========================================
-   8) 유틸: 이니셜(아바타)
+   6) 유틸: 이니셜(아바타) + 시간 계산
 ========================================= */
 // 이름에서 앞 글자 2개 추출(한글/영문 공통)
 function initials (name) {
@@ -354,6 +322,22 @@ function initials (name) {
   const parts = String(name).trim().split(/\s+/)            // 공백으로 분할
   if (parts.length === 1) return parts[0].slice(0, 2)       // 단일어: 앞 2자
   return parts[0].slice(0, 1) + parts[1].slice(0, 1)        // 복합어: 각 1자씩
+}
+
+// 시간 경과 표시 (예: "2시간 전", "어제")
+function timeAgo(ts) {
+  try {
+    const t = new Date(ts).getTime()
+    const diff = Math.floor((Date.now() - t) / 1000)
+    if (diff < 60) return '방금 전'
+    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`
+    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`
+    if (diff < 172800) return '어제'
+    if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`
+    return `${Math.floor(diff / 604800)}주 전`
+  } catch {
+    return String(ts)
+  }
 }
 </script>
 

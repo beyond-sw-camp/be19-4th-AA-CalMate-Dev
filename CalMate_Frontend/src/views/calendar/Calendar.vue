@@ -27,17 +27,29 @@
             <button
               v-else
               class="cell"
-              :class="[{ today: cell.isToday, selected: cell.isSelected }]"
+              :class="[
+                { today: cell.isToday, selected: cell.isSelected },
+                { 'cell-complete': cell.flags.allDone }
+              ]"
               type="button"
               @click="selectDate(cell.dayNumber)"
             >
-              <span class="num">{{ cell.dayNumber }}</span>
-              <div class="marks">
-                <span v-if="cell.flags.diet" class="mark diet" title="식단" />
-                <span v-if="cell.flags.exercise" class="mark exercise" title="운동" />
-                <span v-if="cell.flags.diary" class="mark diary" title="일기" />
+              <div class="cell-inner">
+                <div class="cell-face cell-front">
+                  <span class="num">{{ cell.dayNumber }}</span>
+                  <div class="marks">
+                    <span v-if="cell.flags.diet" class="mark diet" title="식단" />
+                    <span v-if="cell.flags.exercise" class="mark exercise" title="운동" />
+                    <span v-if="cell.flags.diary" class="mark diary" title="일기" />
+                  </div>
+                  <span v-if="cell.flags.allDone" class="trophy-mini" title="올클리어">🏆</span>
+                </div>
+                <div v-if="cell.flags.allDone" class="cell-face cell-back">
+                  <div class="back-glow" aria-hidden="true"></div>
+                  <div class="trophy-giant" aria-hidden="true">🏆</div>
+                  <div class="back-title">클리어!</div>
+                </div>
               </div>
-              <span v-if="cell.flags.allDone" class="trophy" title="올클리어">🏆</span>
             </button>
           </template>
         </div>
@@ -98,7 +110,7 @@
             <div class="j-empty">운동 기록이 없습니다.</div>
           </div>
 
-          <div class="journal clickable" v-if="journalEntry" @click="openDiary">
+          <div class="journal" v-if="journalEntry" @click="openDiary">
             <div class="j-head">
               <span class="dot purple"></span>
               <span class="j-title">일기</span>
@@ -115,6 +127,13 @@
               </div>
               <div class="j-empty" v-else>작성된 메모가 없습니다.</div>
             </div>
+          </div>
+          <div class="journal" v-else @click="openDiary">
+            <div class="j-head">
+              <span class="dot purple"></span>
+              <span class="j-title">일기</span>
+            </div>
+            <div class="j-empty">일기가 작성되지 않았습니다.</div>
           </div>
         </div>
       </section>
@@ -459,7 +478,17 @@ function goExercise() {
 function openDiary() {
   const key = getSelectedDateKey()
   if (!key) return
-  router.push({ name: 'main-diary-done', query: { date: key } })
+
+  // 일기가 작성되었는지 확인
+  const diary = diaryDetailByDate.value[key]
+
+  if (diary) {
+    // 일기가 작성된 경우 - 작성된 일기 페이지로 이동
+    router.push({ name: 'main-diary-done', query: { date: key } })
+  } else {
+    // 일기가 작성되지 않은 경우 - 작성 페이지로 이동
+    router.push({ name: 'main-diary', query: { date: key } })
+  }
 }
 </script>
 
@@ -483,19 +512,47 @@ function openDiary() {
 .daynames .sat { color: #3b82f6; }
 
 .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
-.cell { position: relative; aspect-ratio: 1/1; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-direction: column; }
-.cell:hover { background: #f9fafb; }
+.cell { position: relative; aspect-ratio: 1/1; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; cursor: pointer; padding: 0; perspective: 900px; overflow: hidden; }
+.cell:hover:not(.cell-complete) { background: #f9fafb; }
+.cell-inner { position: relative; width: 100%; height: 100%; border-radius: inherit; display: flex; align-items: center; justify-content: center; transition: transform 0.7s ease; transform-style: preserve-3d; }
+.cell-face { position: absolute; inset: 0; border-radius: inherit; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; backface-visibility: hidden; }
+.cell-front { gap: 6px; }
+.cell-back {
+  transform: rotateY(180deg);
+  background: radial-gradient(circle at 30% 20%, #fff3c4, #fbbf24 55%, #b45309);
+  color: #fff;
+  text-align: center;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 25px rgba(255, 255, 255, 0.4), 0 10px 25px rgba(245, 158, 11, 0.5);
+}
+.cell-back > *:not(.back-glow) { position: relative; z-index: 1; }
+.cell-complete:hover .cell-inner { transform: rotateY(180deg); }
 .cell.placeholder { border-color: transparent; background: transparent; cursor: default; }
 .cell.today { border-color: #3b82f6; box-shadow: inset 0 0 0 1px #3b82f6; }
 .cell.selected { border-color: #111827; box-shadow: inset 0 0 0 2px #111827; }
-.num { font-weight: 700; color: #111827; }
+.num { font-weight: 700; color: #111827; align-self: flex-start; }
 
-.marks { position: absolute; bottom: 6px; display: flex; gap: 6px; }
+.marks { position: absolute; bottom: 8px; display: flex; gap: 6px; }
 .mark { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
 .mark.diet { background: #22c55e; }
 .mark.exercise { background: #3b82f6; }
 .mark.diary { background: #8b5cf6; }
-.trophy { position: absolute; top: 6px; right: 6px; font-size: 14px; }
+.trophy-mini { position: absolute; top: 8px; right: 8px; font-size: 14px; }
+.trophy-giant { line-height: 1; font-size: 32px; filter: drop-shadow(0 4px 8px rgba(146, 64, 14, 0.5)); }
+.back-glow {
+  position: absolute;
+  width: 160%;
+  height: 160%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.5), transparent 70%);
+  filter: blur(12px);
+  opacity: 0.65;
+  z-index: 0;
+}
+.back-date { font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; font-size: 12px; color: rgba(255, 255, 255, 0.8); }
+.back-title { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+.back-sub { font-size: 13px; opacity: 0.9; letter-spacing: 0.04em; }
 
 .legend { display: flex; gap: 14px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid #eef0f4; color: #6b7280; font-size: 14px; }
 .dot { width: 8px; height: 8px; display: inline-block; border-radius: 999px; margin-right: 6px; }
@@ -526,9 +583,8 @@ function openDiary() {
 .e-type { font-weight: 600; color: #111827; }
 .e-meta { color: #6b7280; }
 
-.journal { border: 1px solid #eef0f4; border-radius: 12px; padding: 10px 12px; }
-.journal.clickable { cursor: pointer; }
-.journal.clickable:hover { background: #fafafb; }
+.journal { border: 1px solid #eef0f4; border-radius: 12px; padding: 10px 12px; cursor: pointer; }
+.journal:hover { background: #fafafb; }
 .j-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .j-title { font-weight: 700; color: #374151; }
 .badge { background: #f3f4f6; color: #374151; border-radius: 8px; padding: 2px 6px; font-size: 12px; margin-left: 4px; }

@@ -351,11 +351,14 @@ function handleAddPhotoUrl() {
 
 function handleRemovePhoto(index) {
   const target = photoItems.value[index]
+  console.log('🗑️ 사진 삭제 시도:', { index, target })
   if (!target) return
   if (target.type === 'existing' && target.id) {
     deleteFileIds.value = [...new Set([...deleteFileIds.value, target.id])]
+    console.log('✅ 삭제 파일 ID 추가:', target.id, '전체:', deleteFileIds.value)
   }
   photoItems.value = photoItems.value.filter((_, i) => i !== index)
+  console.log('📋 남은 사진:', photoItems.value.length)
 }
 
 async function handleSave() {
@@ -369,7 +372,16 @@ async function handleSave() {
       .filter((item) => item.type === 'new' && item.file instanceof File)
       .map((item) => item.file)
 
-    if (!currentDiary.value) {
+    const isNewDiary = !currentDiary.value
+
+    console.log('💾 저장 시작:', {
+      isNewDiary,
+      filesToUpload: filesToUpload.length,
+      deleteFileIds: deleteFileIds.value,
+      photoItems: photoItems.value
+    })
+
+    if (isNewDiary) {
       await createDiary({
         memberId: memberId.value,
         date: todayKey.value,
@@ -380,21 +392,32 @@ async function handleSave() {
         files: filesToUpload
       })
     } else {
-      await updateDiary({
+      // 수정 시 항상 파일과 삭제 파일 ID를 전달
+      const updateData = {
         id: currentDiary.value.id,
         mood: mood.value,
         weight: weight.value,
         condition: condition.value,
         memo: notes.value,
-        files: filesToUpload.length > 0 ? filesToUpload : [],
-        deleteFileIds: deleteFileIds.value.length > 0 ? deleteFileIds.value : undefined
-      })
+        files: filesToUpload, // 빈 배열이어도 전달
+        deleteFileIds: deleteFileIds.value // 빈 배열이어도 전달
+      }
+      console.log('📤 updateDiary 호출:', updateData)
+      await updateDiary(updateData)
     }
 
     await syncCalendarDiaryStatus(true)
     success('일기가 저장되었습니다!')
     await loadDiary()
-    router.push({ name: 'main-diary-done', query: { date: todayKey.value } })
+
+    // 새 일기 작성 시 완료 페이지로 이동하면서 포인트 적립 알림 표시
+    router.push({
+      name: 'main-diary-done',
+      query: {
+        date: todayKey.value,
+        showPoint: isNewDiary ? 'true' : undefined
+      }
+    })
   } catch (error) {
     console.error('handleSave error', error)
     toastError('일기를 저장하는 중 오류가 발생했습니다.')

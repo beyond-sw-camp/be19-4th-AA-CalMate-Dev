@@ -91,7 +91,7 @@ import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useToast } from '../../lib/toast.js'
 import { useUserStore } from '@/stores/user'
-import { getQnaDetail, updateQna, deleteQna } from '@/api/qna'
+import { getQnaDetail, updateQna, deleteQna, createQnaComment, updateQnaComment } from '@/api/qna'
 
 const route = useRoute()
 const router = useRouter()
@@ -141,6 +141,7 @@ function mapDetail(d){
     memberId: d.memberId,
     author: d.memberId,
     category: '일반',
+    comments: d.comments || [] // 댓글 배열 보존
   }
   // 관리자(memberId=2)의 최상위 댓글을 답변으로 매핑
   const all = Array.isArray(d.comments) ? d.comments : []
@@ -208,7 +209,42 @@ function startEditAnswer(){
   isEditingAnswer.value = true
 }
 function cancelEditAnswer(){ isEditingAnswer.value = false }
-function saveAnswer(){ toastError('답변 저장 API 연동 필요') }
+
+async function saveAnswer(){
+  const content = (answerText.value || '').trim()
+  if (!content) return toastError('답변 내용을 입력해주세요')
+
+  try {
+    const qnaId = item.value.id
+    const adminMemberId = 2 // 관리자 계정 ID (백엔드에서 관리자로 인식하는 ID)
+
+    // 관리자(memberId=2)의 기존 댓글 찾기
+    const all = Array.isArray(item.value.comments) ? item.value.comments : []
+    const adminComment = all.find(c => String(c.memberId) === '2' && (!c.parentCommentId || Number(c.parentCommentId) === 0))
+
+    if (adminComment) {
+      // 기존 답변이 있으면 수정
+      await updateQnaComment({ commentId: adminComment.id, comment: content })
+      success('답변이 수정되었습니다')
+    } else {
+      // 새 답변 등록
+      await createQnaComment({
+        qnaId,
+        memberId: adminMemberId,
+        comment: content,
+        parentCommentId: null
+      })
+      success('답변이 등록되었습니다')
+    }
+
+    // 상세 정보 새로고침
+    await refreshDetail()
+    isEditingAnswer.value = false
+  } catch (e) {
+    console.error('Answer save failed', e)
+    toastError('답변 저장 중 오류가 발생했습니다')
+  }
+}
 
 async function onDeleteQuestion(){
   try {

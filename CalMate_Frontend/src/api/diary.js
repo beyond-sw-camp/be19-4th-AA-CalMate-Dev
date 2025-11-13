@@ -36,8 +36,12 @@ const buildDiaryFormData = ({
     ...(weight != null && weight !== '' ? { weight: parseInt(weight, 10) } : {}),
     ...(mood != null ? { mood: toDiaryServerMood(mood) } : {}),
     ...(condition != null && condition !== undefined && condition !== false ? { condition } : {}),
-    ...(memo != null && memo !== undefined && memo !== false ? { memo } : {}),
-    ...(Array.isArray(deleteFileIds) ? { deleteFileIds } : {})
+    ...(memo != null && memo !== undefined && memo !== false ? { memo } : {})
+  }
+
+  // deleteFileIds는 배열이면 항상 포함 (빈 배열이어도 OK)
+  if (Array.isArray(deleteFileIds)) {
+    diaryJson.deleteFileIds = deleteFileIds
   }
 
   formData.append('diary', new Blob([JSON.stringify(diaryJson)], { type: 'application/json' }))
@@ -86,6 +90,8 @@ export const getDiaryByDate = ({ memberId, date }) => {
 
 // PATCH /api/diaries/{id} (multipart)
 export const updateDiary = ({ id, mood, weight, condition, memo, files = [], deleteFileIds }) => {
+  console.log('🔧 updateDiary 함수 호출:', { id, deleteFileIds, filesCount: files.length })
+
   const formData = buildDiaryFormData({
     mood,
     weight,
@@ -94,6 +100,15 @@ export const updateDiary = ({ id, mood, weight, condition, memo, files = [], del
     files,
     deleteFileIds
   })
+
+  // FormData 내용 확인
+  const diaryBlob = formData.get('diary')
+  if (diaryBlob) {
+    diaryBlob.text().then(text => {
+      console.log('📦 전송할 diary JSON:', JSON.parse(text))
+    })
+  }
+
   return api.patch(`/api/diaries/${id}`, formData)
 }
 

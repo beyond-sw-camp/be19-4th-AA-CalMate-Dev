@@ -14,6 +14,15 @@
       </div>
     </header>
 
+    <!-- 포인트 모달 -->
+    <div v-if="showPointModal" class="modal-overlay" @click="closePointModal">
+      <div class="modal-box" @click.stop>
+        <h3>🎉 5포인트가 적립되었습니다!</h3>
+        <p>오늘의 일기 기록 보상입니다 😊</p>
+        <button class="modal-btn" @click="closePointModal">확인</button>
+      </div>
+    </div>
+
     <section class="card mood">
       <div class="mood-icon">{{ moodIcon }}</div>
       <div class="mood-text">
@@ -56,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from '../../lib/toast.js'
 import { useUserStore } from '@/stores/user'
@@ -71,6 +80,7 @@ const { success, error: toastError } = useToast()
 const entry = ref(null)
 const isLoading = ref(false)
 const memberId = computed(() => userStore.userId || null)
+const showPointModal = ref(false)
 
 const dateKey = computed(() => {
   const q = route.query?.date
@@ -179,6 +189,17 @@ async function syncCalendarDiaryStatus() {
     console.error('calendar sync error', error)
   }
 }
+
+function closePointModal() {
+  showPointModal.value = false
+}
+
+// 페이지 진입 시 쿼리 파라미터 확인
+onMounted(() => {
+  if (route.query.showPoint === 'true') {
+    showPointModal.value = true
+  }
+})
 </script>
 
 <style scoped>
@@ -207,4 +228,70 @@ async function syncCalendarDiaryStatus() {
 
 .photo-list { display: grid; grid-template-columns: repeat(auto-fill,minmax(120px,1fr)); gap: 10px; }
 .photo-list img { width: 100%; height: 100px; object-fit: cover; border-radius: 12px; border: 1px solid #e5e7eb; }
+
+/* 포인트 모달 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: white;
+  border-radius: 20px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 320px;
+  width: 90%;
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-box h3 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.modal-box p {
+  margin: 0 0 24px;
+  font-size: 15px;
+  color: #6b7280;
+}
+
+.modal-btn {
+  width: 100%;
+  padding: 14px;
+  background: #0b0b2b;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-btn:hover {
+  background: #11113a;
+}
 </style>
