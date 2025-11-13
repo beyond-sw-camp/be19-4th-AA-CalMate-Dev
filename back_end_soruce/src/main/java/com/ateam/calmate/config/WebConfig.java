@@ -6,6 +6,9 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
@@ -15,6 +18,12 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String baseDir = System.getProperty("user.dir");
+        Path currentDir = Paths.get(baseDir).toAbsolutePath().normalize();
+        boolean runningFromModule = currentDir.getFileName().toString().equals("back_end_soruce");
+        Path backendDir = runningFromModule ? currentDir : currentDir.resolve("back_end_soruce");
+        Path repoRootDir = runningFromModule && currentDir.getParent() != null
+                ? currentDir.getParent()
+                : currentDir;
 
         // 프로필 단건 이미지
         registry.addResourceHandler("/img/single/**")
@@ -34,17 +43,14 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/img/community/**")
                 .addResourceLocations("file:" + System.getProperty("user.dir") + "/img/community/");
 
-        // Bingo event uploads (files are stored in back_end_soruce/img/event/)
+        // Bingo 및 일반 업로드 파일을 모두 /uploads/** 로 노출
+        String bingoUploadDir = backendDir.resolve("img/event/").toUri().toString();
+        String legacyUploadsDir = repoRootDir.resolve("uploads/").toUri().toString();
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + System.getProperty("user.dir") + "/back_end_soruce/img/event/");
+                .addResourceLocations(bingoUploadDir, legacyUploadsDir);
 
         registry.addResourceHandler("/img/report/**")
                 .addResourceLocations("file:" + System.getProperty("user.dir") + "/img/report/");
-
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + System.getProperty("user.dir") + "/uploads/");
-
-
     }
 
     @Override

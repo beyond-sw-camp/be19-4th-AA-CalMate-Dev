@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -87,14 +88,16 @@ public class GachaIntegrationController {
         int pageIndex = Math.max(page - 1, 0);
         int pageSize = Math.min(Math.max(size, 1), 50);
         Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<GachaDrawLogDTO> history = boardCommandService.findMemberHistory(memberId, eventId, pageable);
+        GachaBoardCommandService.GachaDrawHistoryResult result = boardCommandService.findMemberHistory(memberId, eventId, pageable);
+        Page<GachaDrawLogDTO> history = result.page();
         return new PageResponse<>(
                 history.getContent(),
                 history.getNumber() + 1,
                 history.getSize(),
                 history.getTotalElements(),
                 history.getTotalPages(),
-                history.isLast()
+                history.isLast(),
+                result.rarityStats()
         );
     }
 
@@ -127,6 +130,7 @@ public class GachaIntegrationController {
             int size,
             long totalElements,
             int totalPages,
-            boolean last
+            boolean last,
+            Map<String, Long> rarityStats
     ) {}
 }

@@ -9,6 +9,8 @@ import com.ateam.calmate.event.enums.CellStatus;
 import com.ateam.calmate.event.enums.PolicyType;
 import com.ateam.calmate.event.query.dto.gacha.GachaDrawLogDTO;
 import com.ateam.calmate.event.query.dto.gacha.GachaSharedBoardDTO;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +22,14 @@ import org.springframework.util.Assert;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +37,7 @@ public class GachaBoardCommandService {
 
     private static final int BOARD_DIMENSION = 10;
     private static final int BOARD_CELL_COUNT = BOARD_DIMENSION * BOARD_DIMENSION;
+    private static final List<String> RARITY_ORDER = List.of("common", "rare", "epic", "legendary");
 
     private static final Logger log = LoggerFactory.getLogger(GachaBoardCommandService.class);
 
@@ -37,6 +45,7 @@ public class GachaBoardCommandService {
     private final GachaPrizeRepository prizeRepository;
     private final GachaDrawLogRepository drawLogRepository;
     private final GachaCommandRepository eventRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public GachaSharedBoardDTO openCell(Long cellId, Long memberId, Long prizeId) {
@@ -84,16 +93,19 @@ public class GachaBoardCommandService {
                 .resultCode("SUCCESS")
                 .build();
 
-        return toDto(drawLogRepository.save(log));
+        return toDto(drawLogRepository.save(log), prize);
     }
 
     @Transactional(readOnly = true)
-    public Page<GachaDrawLogDTO> findMemberHistory(Long memberId, Long eventId, Pageable pageable) {
+    public GachaDrawHistoryResult findMemberHistory(Long memberId, Long eventId, Pageable pageable) {
         Assert.notNull(memberId, "memberId must not be null");
         Page<GachaDrawLogEntity> page = (eventId == null)
                 ? drawLogRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable)
                 : drawLogRepository.findByMemberIdAndGachaEventIdOrderByCreatedAtDesc(memberId, eventId, pageable);
-        return page.map(this::toDto);
+        Map<Long, GachaPrizeEntity> prizeById = resolvePrizes(page);
+        Page<GachaDrawLogDTO> dtoPage = page.map(entity -> toDto(entity, prizeById.get(entity.getPrizeId())));
+        Map<String, Long> rarityStats = computeRarityStats(memberId, eventId);
+        return new GachaDrawHistoryResult(dtoPage, rarityStats);
     }
 
     @Transactional
@@ -307,14 +319,74 @@ public class GachaBoardCommandService {
         return pool;
     }
 
-    private GachaDrawLogDTO toDto(GachaDrawLogEntity entity) {
+    private GachaDrawLogDTO toDto(GachaDrawLogEntity entity, GachaPrizeEntity prize) {
         return GachaDrawLogDTO.builder()
                 .id(entity.getId())
                 .createdAt(entity.getCreatedAt())
                 .memberId(entity.getMemberId())
+                .gachaEventId(entity.getGachaEventId())
                 .gachaSharedBoardId(entity.getGachaSharedBoardId())
                 .boardVersion(entity.getBoardVersion())
                 .gachaPrizeId(entity.getPrizeId())
+                .prizeRank(entity.getPrizeRank())
+                .prizeName(prize != null ? prize.getName() : null)
+                .prizeType(prize != null ? prize.getPrizeType() : null)
+                .prizePayload(prize != null ? parsePayloadJson(prize.getPayloadJson()) : null)
+                .rarity(resolveRarityByRank(entity.getPrizeRank()))
                 .build();
     }
+
+    private Map<String, Object> parsePayloadJson(String payloadJson) {
+        if (payloadJson == null || payloadJson.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(payloadJson, new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            log.warn("Failed to parse payloadJson: {}", payloadJson, e);
+            return null;
+        }
+    }
+
+    private Map<Long, GachaPrizeEntity> resolvePrizes(Page<GachaDrawLogEntity> page) {
+        if (page.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Set<Long> prizeIds = page.getContent().stream()
+                .map(GachaDrawLogEntity::getPrizeId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (prizeIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return prizeRepository.findAllById(prizeIds).stream()
+                .collect(Collectors.toMap(GachaPrizeEntity::getId, Function.identity()));
+    }
+
+    private Map<String, Long> computeRarityStats(Long memberId, Long eventId) {
+        Map<String, Long> stats = new LinkedHashMap<>();
+        RARITY_ORDER.forEach(rarity -> stats.put(rarity, 0L));
+
+        drawLogRepository.countByMemberAndEventGroupByRank(memberId, eventId)
+                .forEach(row -> {
+                    Integer rank = row[0] instanceof Number ? ((Number) row[0]).intValue() : null;
+                    long count = row[1] instanceof Number ? ((Number) row[1]).longValue() : 0L;
+                    String rarity = resolveRarityByRank(rank);
+                    stats.merge(rarity, count, Long::sum);
+                });
+
+        return stats;
+    }
+
+    private String resolveRarityByRank(Integer rank) {
+        if (rank == null) {
+            return "common";
+        }
+        if (rank == 1) return "legendary";
+        if (rank == 2) return "epic";
+        if (rank == 3) return "rare";
+        return "common";
+    }
+
+    public record GachaDrawHistoryResult(Page<GachaDrawLogDTO> page, Map<String, Long> rarityStats) {}
 }
