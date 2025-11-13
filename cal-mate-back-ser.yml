@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cal-mate-back-ser
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8001
+    targetPort: 8081
+  selector:
+    app: cal-mate-back-kube
+

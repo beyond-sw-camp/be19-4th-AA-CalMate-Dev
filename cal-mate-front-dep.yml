@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cal-mate-front-dep
+spec:
+  selector:
+    matchLabels:
+      app: cal-mate-front-kube
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cal-mate-front-kube
+    spec:
+      containers:
+      - name: vue-container
+        image: kang92/cal_mate_front:latest
+        imagePullPolicy: Always 
+        ports:
+        - containerPort: 80
+
