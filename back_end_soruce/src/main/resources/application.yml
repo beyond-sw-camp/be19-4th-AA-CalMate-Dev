@@ -79,6 +79,6 @@ mybatis:
 
 # 프로필 이미지 관련 경로
 profile:
-  dirPath: /back_end_soruce/img/profile/
+  dirPath: /img/profile/
 
 
