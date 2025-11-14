@@ -202,7 +202,7 @@ AI 이미지 생성 기술을 활용해 체지방 변화 예측 사진과
 
 ## 🛜 CI/CD 프로젝트 아키텍처
 
-![](https://github.com/beyond-SW-Camp-14th-clover/be14-4th-clover-moodiary-Dev/raw/main/image/image%20(1).png)
+![](https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/img/CICD/Architecture.png)
 
 ---
 
