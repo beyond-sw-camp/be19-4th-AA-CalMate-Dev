@@ -77,17 +77,17 @@ AI 이미지 생성 기술을 활용해 체지방 변화 예측 사진과
 
 **1. Domain Event Storming**
 
-![](https://raw.githubusercontent.com/beyond-SW-Camp-14th-clover/be14-4th-clover-moodiary-Dev/main/image/DDD1.png)
+![](https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/DDD/1.jpg)
 
-![](https://raw.githubusercontent.com/beyond-SW-Camp-14th-clover/be14-4th-clover-moodiary-Dev/main/image/DDD2.png)
+![](https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/DDD/2.jpg)
 
-![](https://raw.githubusercontent.com/beyond-SW-Camp-14th-clover/be14-4th-clover-moodiary-Dev/main/image/DDD3.png)
+![](https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/DDD/3.png)
 
 ---
 
 **🗃️ DB 모델링**
 
-![](https://private-user-images.githubusercontent.com/192682204/441925058-178fc0f0-47e7-4347-b687-b8cf4c596820.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjMwMjE4NzQsIm5iZiI6MTc2MzAyMTU3NCwicGF0aCI6Ii8xOTI2ODIyMDQvNDQxOTI1MDU4LTE3OGZjMGYwLTQ3ZTctNDM0Ny1iNjg3LWI4Y2Y0YzU5NjgyMC5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMTEzJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTExM1QwODEyNTRaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1kM2FjNjg5NmM4NzlhNWY2ODg3ZDc2MjU0MGU0YjY1NTM3YTBmNjhkOGRhYWZjMjdjNWM3MmUzODM2MDM3YjI2JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.fnaE-EhXr9Uu-7_J8Y64nhKV7BkDMngxYiL3EL2p_kQ)
+![](https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/ERD/erdcloud.png)
 
 ---
 
@@ -95,7 +95,7 @@ AI 이미지 생성 기술을 활용해 체지방 변화 예측 사진과
 
 🔗 [Figma 디자인]
 
-![](https://raw.githubusercontent.com/beyond-SW-Camp-14th-clover/be14-4th-clover-moodiary-Dev/main/image/Figma.png)
+![](https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/Figma/Figma.png)
 
 ---
 
