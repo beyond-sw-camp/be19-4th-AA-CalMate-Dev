@@ -214,7 +214,10 @@ return null;
             @CookieValue(name = CookieUtil.REFRESH_COOKIE, required = false) String refreshCookie,
             @RequestHeader(value = "X-Device-Fp", required = false) String deviceFp) {
         try {
-            if (refreshCookie == null) return ResponseEntity.status(401).build();    // 쿠키 없음
+            if (refreshCookie == null) {
+                log.info("=====리프래시 요청시 RT 없어서 반환 시킴=====");
+                return ResponseEntity.status(401).build();    // 쿠키 없음
+            }
 
             ResponseTokenDTO responseTokenDTO = refreshTokenService.refreshToken(refreshCookie, deviceFp);
 

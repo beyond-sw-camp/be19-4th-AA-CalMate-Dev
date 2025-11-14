@@ -6,6 +6,7 @@ import com.ateam.calmate.member.command.entity.RefreshTokenEntity;
 import com.ateam.calmate.member.command.repository.RefreshTokenRepository;
 import com.ateam.calmate.security.JwtFactory;
 import io.jsonwebtoken.Claims;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.UUID;
 
 // ✅ 회전/재사용 감지/강제폐기 핵심 로직
 @Service
+@Slf4j
 public class RefreshTokenServiceImple implements RefreshTokenService {
 
     @Value("${token.refresh.expiration_time}")  private long refreshTtlMs;        // 리프레시 만료(ms) (예: 14일)
@@ -55,14 +57,26 @@ public class RefreshTokenServiceImple implements RefreshTokenService {
         RefreshTokenEntity e = repo.findByJti(jtiClaim)
                 .orElseThrow(() -> new RuntimeException("Unknown jti"));    // jti가 DB에 없으면 의심/오류
 
-        if (e.isRevoked()) throw new RuntimeException("Token revoked");     // 이미 폐기된 토큰 → 재사용 시도
+        if (e.isRevoked()) {
 
-        if (!e.getMemberId().equals(userId)) throw new RuntimeException("User mismatch"); // 사용자 불일치
+            log.warn("RT 실패: revoked 토큰. jti={}", e.getJti());
+            throw new RuntimeException("Token revoked");
+        }     // 이미 폐기된 토큰 → 재사용 시도
 
-        if (e.getExpiresAt().isBefore(LocalDateTime.now())) throw new RuntimeException("Expired"); // 만료
+        if (!e.getMemberId().equals(userId)){
+            throw new RuntimeException("User mismatch"); // 사용자 불일치
+        }
+
+        if (e.getExpiresAt().isBefore(LocalDateTime.now()))
+        {
+            log.warn("RT 실패: 만료된 RT. jti={}", e.getJti());
+            throw new RuntimeException("Expired"); // 만료
+        }
 
         if (!sha256(refreshRaw).equals(e.getTokenHash()))                      // 원문 해시 비교(위조/다른 원본)
+        {
             throw new RuntimeException("Hash mismatch");
+        }
 
         // (옵션) 디바이스 바인딩 체크: 발급 당시 deviceFp와 다르면 추가 인증/거부 정책 가능
         if (e.getDeviceFp() != null && deviceFp != null && !e.getDeviceFp().equals(deviceFp)) {
@@ -138,11 +152,6 @@ public class RefreshTokenServiceImple implements RefreshTokenService {
 
         ResponseTokenDTO response = new ResponseTokenDTO(refresh, access);
 
-
-        System.out.println("요청 RT");
-        System.out.println(refreshRaw);
-        System.out.println("반환 RT");
-        System.out.println(refresh);
 
         return response;
     }
