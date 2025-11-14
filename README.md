@@ -13,6 +13,8 @@
 
 [**🛠️ 주요 기능**](https://github.com/beyond-sw-camp/be14-4th-clover-moodiary-Dev#-%EC%A3%BC%EC%9A%94%EA%B8%B0%EB%8A%A5)
 
+[**📄 WBS**](https://github.com/beyond-sw-camp/be14-4th-clover-moodiary-Dev#-%EC%9A%94%EA%B5%AC%EC%82%AC%ED%95%AD-%EB%AA%85%EC%84%B8%EC%84%9C)
+
 [**🙆‍♀️ 요구사항 명세서**](https://github.com/beyond-sw-camp/be14-4th-clover-moodiary-Dev#-%EC%9A%94%EA%B5%AC%EC%82%AC%ED%95%AD-%EB%AA%85%EC%84%B8%EC%84%9C)
 
 [**💭 DDD 설계**](https://github.com/beyond-sw-camp/be14-4th-clover-moodiary-Dev#-DDD-%EC%84%A4%EA%B3%84)
@@ -67,9 +69,15 @@ AI 이미지 생성 기술을 활용해 체지방 변화 예측 사진과
 
 ---
 
+**📄 WBS**
+
+🔗 [WBS 바로가기](https://docs.google.com/spreadsheets/d/1LKRA_FTxVP1aXb2mOxQGSUPFLPpw8EjTVss2mr-ZT3s/edit?gid=774177036#gid=774177036)
+
+---
+
 **🙆‍♀️ 요구사항 명세서**
 
-🔗 [요구사항 명세서 바로가기](https://docs.google.com/spreadsheets/d/18n2OJHiRjAZ0b6NBGHlsgf-LoMMUqmXSKnpa_4X8NSc/edit?gid=0#gid=0)
+🔗 [요구사항 명세서 바로가기](https://docs.google.com/spreadsheets/d/1LKRA_FTxVP1aXb2mOxQGSUPFLPpw8EjTVss2mr-ZT3s/edit?gid=0#gid=0)
 
 ---
 
@@ -77,7 +85,7 @@ AI 이미지 생성 기술을 활용해 체지방 변화 예측 사진과
 
 **1. Domain Event Storming**
 
-![](https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/DDD/1.jpg)
+![](https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/DDD/1.png)
 
 ![](https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/DDD/2.jpg)
 
