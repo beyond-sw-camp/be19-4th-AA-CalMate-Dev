@@ -4,6 +4,7 @@ import com.ateam.calmate.ai.command.dto.*;
 import com.ateam.calmate.ai.command.service.AiDietCommandService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,13 +26,18 @@ public class AiDietCommandController {
         log.info(request.toString());
         AiResponseDTO response = aiDietCommandService.getDietAndSave(request);
         log.info(response.toString());
-        return ResponseEntity.ok(response); // 오류나면 어떤 Response인지 알 수 있도록 수정해야함
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/exercise")
     public ResponseEntity<AiExerciseResponseDTO> requestExercise(@RequestBody RequestExerciseDTO request) {
         log.info(request.toString());
         AiExerciseResponseDTO response = aiDietCommandService.getExercise(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<String> handleException(Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
     }
 }

@@ -5,6 +5,7 @@ import com.ateam.calmate.ai.command.entity.AiDietEntity;
 import com.ateam.calmate.ai.command.repository.AiDietRepository;
 import com.ateam.calmate.ai.query.dto.GoalQueryDTO;
 import com.ateam.calmate.ai.query.service.AiDietQueryService;
+import com.ateam.calmate.security.MemberGoalNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -141,12 +142,18 @@ public class AiDietCommandService {
         aiRequest.setGender(request.getGender());
         aiRequest.setHeight(request.getHeight());
         aiRequest.setWeight(request.getWeight());
+        aiRequest.setBodyMetric(request.getBodyMetric());
         GoalQueryDTO result = aiDietQueryService.getMemberGoalInfo(request.getMemberId());
+        if (result == null) {
+            // try-catch로 메시지를 "반환(return)"하는 대신,
+            // 예외를 "발생(throw)"시킵니다.
+            log.warn("회원 ID {}에 대한 목표 정보를 찾을 수 없습니다.", request.getMemberId());
+            throw new MemberGoalNotFoundException("회원의 목표 정보가 설정되어 있지 않습니다. 목표를 먼저 설정해주세요.");
+        }
         aiRequest.setGoalType(result.getGoalType());
         aiRequest.setTargetValue(result.getTargetValue());
         aiRequest.setStartDate(result.getStartDate());
         aiRequest.setEndDate(result.getEndDate());
-        aiRequest.setBodyMetric(request.getBodyMetric());
         List<String> allergyNames = aiDietQueryService.getAllergy(request.getMemberId());
         aiRequest.setAllergyNames(allergyNames);
         return aiRequest;
