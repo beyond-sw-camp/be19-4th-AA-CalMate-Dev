@@ -27,12 +27,5 @@ onMounted(async () => {
     console.debug('Health check disabled (VITE_ENABLE_HEALTH_CHECK!=true)')
   }
 
-
-    // error('test1',{duration: 40000,description: '데이터가 성공적으로 저장되었습니다.' });
-    // info('test2',{duration: 40000,description: '데이터가 성공적으로 저장되었습니다.' });
-    // success('test3',{duration: 40000,description: '데이터가 성공적으로 저장되었습니다.' });
-  // console.log('테스트:::::', sessionStorage.getItem('device_fp'));
-  // console.log('이름:', userStore.name)
-  // console.log('로그인 상태:', userStore.isLoggedIn)
 })
 </script>

@@ -24,11 +24,11 @@ export default [
         name: 'dashboard-qna-new',
         component: () => import('@/views/qna/Qna.vue'),
       },
-      {
-        path: 'qna/:id',
-        name: 'dashboard-qna-detail',
-        component: () => import('@/views/qna/QnaDetail.vue'),
-      },
+      // {
+      //   path: 'qna/:id',
+      //   name: 'dashboard-qna-detail',
+      //   component: () => import('@/views/qna/QnaDetail.vue'),
+      // },
       {
         path: 'diary',
         name: 'main-diary',

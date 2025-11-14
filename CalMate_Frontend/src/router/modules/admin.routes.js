@@ -32,7 +32,12 @@ export default [
                 component: () => import('@/views/AdminPage/AdminInquiries.vue'), 
             },
         ]
-      }
+      },
+      {
+        path: 'qna/:id',
+        name: 'dashboard-qna-detail',
+        component: () => import('@/views/qna/QnaDetail.vue'),
+      },
     ],
   },
 ];

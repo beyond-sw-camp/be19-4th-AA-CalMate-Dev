@@ -128,7 +128,6 @@ async function signIn() {
                    }
               });
 
-    // console.log('테스트1123123:::::', sessionStorage.getItem('device_fp'));
     const token = response.headers['token']; 
     console.log('token:\n',token);
     console.log('data:\n',response.data);

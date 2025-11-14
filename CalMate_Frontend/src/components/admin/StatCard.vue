@@ -17,7 +17,7 @@
       <!-- 하단 보조 줄 -->
       <div class="sub" v-if="sublabel || subvalue !== null">
         <span class="sublabel" v-if="sublabel">{{ sublabel }}</span>
-        <span class="subvalue" v-if="subvalue !== null">{{ subvalue }}</span>
+        <span class="subvalue" v-if="subvalue !== null">{{ subvalue }} %</span>
       </div>
     </div>
   </article>

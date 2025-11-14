@@ -256,7 +256,7 @@ const reply = ref({
 })
 // 상세보기 (회원 페이지로 이동)
 function viewDetail(qnaId) {
-  router.push(`/main/qna/${qnaId}`)
+  router.push(`/admin/qna/${qnaId}`)
 }
 
 // 답변 모달 열기

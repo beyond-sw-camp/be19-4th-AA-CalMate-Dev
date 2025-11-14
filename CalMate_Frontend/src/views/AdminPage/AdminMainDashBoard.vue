@@ -15,7 +15,7 @@
         </template>
       </StatCard>
 
-      <StatCard title="활성 사용자" :value="kpi.activeUsers" sublabel="0% 비율" :subvalue="kpi.activeRate" tone="green">
+      <StatCard title="활성 사용자" :value="kpi.totalActive" sublabel="비율:" :subvalue="kpi.activeRate" tone="green">
         <template #icon>
           <svg viewBox="0 0 24 24" class="icon"><path d="M12 20a8 8 0 100-16 8 8 0 000 16zm-1-4l6-6-1.41-1.41L11 13.17l-2.59-2.58L7 12l4 4z"/></svg>
         </template>
@@ -116,7 +116,7 @@ onMounted(async () =>  {
     kpi.blockedUsers = result.responseData.blockedMembers;
     kpi.suspendedUsers = result.responseData.stopedMembers;
     kpi.newUseres = result.responseData.newMembers;
-    console.log('123::::',result.responseData.totalMembers);
+    kpi.activeRate = Math.round(kpi.totalActive / kpi.totalUsers * 100 * 100) / 100;
 
   }
   catch (error)
