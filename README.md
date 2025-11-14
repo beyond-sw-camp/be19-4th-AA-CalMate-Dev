@@ -5,6 +5,63 @@
 
 ---
 
+## 😊 조원 소개
+
+<table style="width:100%;">
+  <thead>
+    <tr align="center">
+      <th>팀원</th>
+      <th>팀원</th>
+      <th>팀원</th>
+      <th>팀원</th>
+      <th>팀원</th>
+      <th>팀원</th>        
+    </tr>
+  </thead>
+  <tbody>
+    <tr align="center">
+      <td>
+        <a href="https://github.com/kjin0204" target="_blank">
+          <img src="https://github.com/Youth-Leap-Squad/EatToday_store/blob/main/src/assets/img/%EC%9D%B4%EA%B5%AC%EB%A1%9C.jpg" width="210" style="border-radius:100%" alt="강형규"/><br/>
+          <b>강형규</b>
+        </a>
+      </td>
+      <td>
+        <a href="https://github.com/Yunji458" target="_blank">
+          <img src="https://github.com/Youth-Leap-Squad/EatToday_store/blob/main/src/assets/img/%ED%95%98%EC%BF%A0%EC%A7%80.jpg" width="210" style="border-radius:100%" alt="김윤지"/><br/>
+          <b>김윤지</b>
+        </a>
+      </td>
+      <td>
+        <a href="https://github.com/woo-kyoung-nam" target="_blank">
+          <img src="https://github.com/Youth-Leap-Squad/EatToday_store/blob/main/src/assets/img/%EA%B5%90%EB%A9%94%EC%9D%B4_%EC%9A%B0%E3%85%95%E3%84%B1%E3%85%87.jpg" width="210" style="border-radius:100%" alt="남우경"/><br/>
+          <b>남우경</b>
+        </a>
+      </td>
+      <td>
+        <a href="https://github.com/seoguhoe2" target="_blank">
+          <img src="https://github.com/Youth-Leap-Squad/EatToday_store/blob/main/src/assets/img/%EC%A0%A0%EC%9D%B4%EC%B8%A0.jpg" width="210" style="border-radius:100%" alt="백준승"/><br/>
+          <b>백준승</b>
+        </a>
+      </td>
+      <td>
+        <a href="https://github.com/leejaeguen" target="_blank">
+          <img src="https://github.com/Youth-Leap-Squad/EatToday_store/blob/main/src/assets/img/%EA%B5%90%EB%A9%94%EC%9D%B4_%EC%9A%B0%E3%85%95%E3%84%B1%E3%85%87.jpg" width="210" style="border-radius:100%" alt="이재근"/><br/>
+          <b>이재근</b>
+        </a>
+      </td>
+      <td>
+        <a href="https://github.com/golealda" target="_blank">
+          <img src="https://github.com/Youth-Leap-Squad/EatToday_store/blob/main/src/assets/img/%ED%98%84%EC%88%98_%EC%9D%B4%EB%85%B8%EC%8A%A4%EC%BC%80.jpg" width="210" style="border-radius:100%" alt="이현수"/><br/>
+          <b>이현수</b>
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
 **📜 목차**
 
 [**💡 Tech Stack**](https://github.com/beyond-sw-camp/be14-4th-clover-moodiary-Dev#-Tech-Stack)
@@ -200,10 +257,13 @@ pipeline {
     }
 }
 ```
+---
 
 **📱 CI/CD 테스트**
 
 ![](https://raw.githubusercontent.com/beyond-SW-Camp-14th-clover/be14-4th-clover-moodiary-Dev/main/image/CICD%ED%85%8C%EC%8A%A4%ED%8A%B8.png)
+
+---
 
 **😊 개인 회고록**
 
