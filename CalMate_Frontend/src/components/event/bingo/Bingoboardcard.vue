@@ -63,9 +63,25 @@ import api from '@/lib/api';
 function resolveFileUrl(path) {
   if (!path) return '';
   if (/^https?:/i.test(path)) return path;
+
   const normalized = path.startsWith('/') ? path : `/${path}`;
-  if (!api.defaults.baseURL) return normalized;
-  return `${api.defaults.baseURL}${normalized}`;
+  const baseURL = api.defaults?.baseURL;
+  if (!baseURL) return normalized;
+
+  if (typeof window !== 'undefined') {
+    try {
+      const baseHost = new URL(baseURL).hostname;
+      const pageHost = window.location.hostname;
+      if (LOOPBACK_HOSTS.has(baseHost) && !LOOPBACK_HOSTS.has(pageHost)) {
+        return normalized;
+      }
+    } catch (error) {
+      console.warn('Failed to resolve bingo file URL', error);
+      return normalized;
+    }
+  }
+
+  return `${baseURL}${normalized}`;
 }
 
 export default defineComponent({

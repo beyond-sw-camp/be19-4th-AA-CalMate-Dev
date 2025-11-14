@@ -48,6 +48,22 @@
             </label>
           </section>
 
+          <section
+            v-if="currentCell?.uploads?.length"
+            class="existing-proof"
+          >
+            <p class="existing-proof__title">기존 인증 사진</p>
+            <div class="existing-proof__grid">
+              <img
+                v-for="(p, index) in currentCell.uploads"
+                :key="p.id ?? p.uploadId ?? index"
+                :src="resolveFileUrl(p.path || p.fullUrl || p.url || '')"
+                alt="기존 인증 이미지"
+                class="existing-proof__image"
+              />
+            </div>
+          </section>
+
           <p class="upload-helper">최대 10MB, 이미지 파일만 가능합니다.</p>
 
           <div v-if="currentCell && currentCell.completed" class="completed-banner">
@@ -92,12 +108,30 @@ import { useToast } from '../lib/toast.js';
 import { cancelBingoCellCheck, checkBingoCell, deleteBingoFile } from '@/api/bingo';
 import api from '@/lib/api';
 
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+
 function resolveFileUrl(path) {
   if (!path) return '';
   if (/^https?:/i.test(path)) return path;
+
   const normalized = path.startsWith('/') ? path : `/${path}`;
-  if (!api.defaults.baseURL) return normalized;
-  return `${api.defaults.baseURL}${normalized}`;
+  const baseURL = api.defaults?.baseURL;
+  if (!baseURL) return normalized;
+
+  if (typeof window !== 'undefined') {
+    try {
+      const baseHost = new URL(baseURL).hostname;
+      const pageHost = window.location.hostname;
+      if (LOOPBACK_HOSTS.has(baseHost) && !LOOPBACK_HOSTS.has(pageHost)) {
+        return normalized;
+      }
+    } catch (error) {
+      console.warn('Failed to resolve bingo file URL', error);
+      return normalized;
+    }
+  }
+
+  return `${baseURL}${normalized}`;
 }
 
 export default defineComponent({
@@ -357,6 +391,7 @@ export default defineComponent({
       resetImage,
       formatDate,
       isCancelling,
+      resolveFileUrl,
     };
   },
 });
@@ -462,6 +497,32 @@ export default defineComponent({
   margin-top: 0.75rem;
   font-size: 0.8rem;
   color: #94a3b8;
+}
+
+.existing-proof {
+  margin-top: 1rem;
+}
+
+.existing-proof__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+
+.existing-proof__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.existing-proof__image {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #f8fafc;
 }
 
 .preview-wrapper {
