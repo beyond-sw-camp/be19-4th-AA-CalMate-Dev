@@ -22,37 +22,37 @@
     <tr align="center">
       <td>
         <a href="https://github.com/kjin0204" target="_blank">
-          <img src="https://github.com/Youth-Leap-Squad/EatToday_store/blob/main/src/assets/img/%EC%9D%B4%EA%B5%AC%EB%A1%9C.jpg" width="210" style="border-radius:100%" alt="강형규"/><br/>
+          <img src="https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/%EA%B0%9C%EC%9D%B8%EC%9D%B4%EB%AF%B8%EC%A7%80/%EA%B9%80%EA%B1%B4%EC%9A%B0.jpg" width="210" style="border-radius:100%" alt="강형규"/><br/>
           <b>강형규</b>
         </a>
       </td>
       <td>
         <a href="https://github.com/Yunji458" target="_blank">
-          <img src="https://github.com/Youth-Leap-Squad/EatToday_store/blob/main/src/assets/img/%ED%95%98%EC%BF%A0%EC%A7%80.jpg" width="210" style="border-radius:100%" alt="김윤지"/><br/>
+          <img src="https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/%EA%B0%9C%EC%9D%B8%EC%9D%B4%EB%AF%B8%EC%A7%80/%EC%86%A1%EC%95%84%EB%A6%84.jpg" width="210" style="border-radius:100%" alt="김윤지"/><br/>
           <b>김윤지</b>
         </a>
       </td>
       <td>
         <a href="https://github.com/woo-kyoung-nam" target="_blank">
-          <img src="https://github.com/Youth-Leap-Squad/EatToday_store/blob/main/src/assets/img/%EA%B5%90%EB%A9%94%EC%9D%B4_%EC%9A%B0%E3%85%95%E3%84%B1%E3%85%87.jpg" width="210" style="border-radius:100%" alt="남우경"/><br/>
+          <img src="https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/%EA%B0%9C%EC%9D%B8%EC%9D%B4%EB%AF%B8%EC%A7%80/%EA%B9%80%EA%B0%95%EB%AF%BC.jpg" width="210" style="border-radius:100%" alt="남우경"/><br/>
           <b>남우경</b>
         </a>
       </td>
       <td>
         <a href="https://github.com/seoguhoe2" target="_blank">
-          <img src="https://github.com/Youth-Leap-Squad/EatToday_store/blob/main/src/assets/img/%EC%A0%A0%EC%9D%B4%EC%B8%A0.jpg" width="210" style="border-radius:100%" alt="백준승"/><br/>
+          <img src="https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/%EA%B0%9C%EC%9D%B8%EC%9D%B4%EB%AF%B8%EC%A7%80/%EC%9E%A5%EC%84%B1%EC%97%BD.jpg" width="210" style="border-radius:100%" alt="백준승"/><br/>
           <b>백준승</b>
         </a>
       </td>
       <td>
         <a href="https://github.com/leejaeguen" target="_blank">
-          <img src="https://github.com/Youth-Leap-Squad/EatToday_store/blob/main/src/assets/img/%EA%B5%90%EB%A9%94%EC%9D%B4_%EC%9A%B0%E3%85%95%E3%84%B1%E3%85%87.jpg" width="210" style="border-radius:100%" alt="이재근"/><br/>
+          <img src="https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/%EA%B0%9C%EC%9D%B8%EC%9D%B4%EB%AF%B8%EC%A7%80/%EA%B9%80%EB%AF%BC%EC%88%98.jpeg" width="210" style="border-radius:100%" alt="이재근"/><br/>
           <b>이재근</b>
         </a>
       </td>
       <td>
         <a href="https://github.com/golealda" target="_blank">
-          <img src="https://github.com/Youth-Leap-Squad/EatToday_store/blob/main/src/assets/img/%ED%98%84%EC%88%98_%EC%9D%B4%EB%85%B8%EC%8A%A4%EC%BC%80.jpg" width="210" style="border-radius:100%" alt="이현수"/><br/>
+          <img src="https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/%EA%B0%9C%EC%9D%B8%EC%9D%B4%EB%AF%B8%EC%A7%80/%EC%A4%80%EA%B7%9C%EB%B9%8C%EB%8D%94.jpg" width="210" style="border-radius:100%" alt="이현수"/><br/>
           <b>이현수</b>
         </a>
       </td>
