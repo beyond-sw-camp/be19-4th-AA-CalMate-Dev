@@ -91,7 +91,7 @@
 
 ---
 
-**💡 Tech Stack**
+## 💡 Tech Stack
 ### 🌿 Backend
 ![Spring](https://img.shields.io/badge/Spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
@@ -124,7 +124,7 @@
 
 ---
 
-**📢 프로젝트 설명**
+## 📢 프로젝트 설명
 
 **1. 프로젝트 주제**
 
@@ -144,7 +144,7 @@ AI 이미지 생성 기술을 활용해 체지방 변화 예측 사진과
 
 ---
 
-**🛠️ 주요 기능**
+## 🛠️ 주요 기능
 
 - AI 체형 변화 예측 이미지 생성
 - 음식 사진 → 자동 칼로리 분석(AI 식단 인식)
@@ -157,19 +157,19 @@ AI 이미지 생성 기술을 활용해 체지방 변화 예측 사진과
 
 ---
 
-**📄 WBS**
+## 📄 WBS
 
 🔗 [WBS 바로가기](https://docs.google.com/spreadsheets/d/1LKRA_FTxVP1aXb2mOxQGSUPFLPpw8EjTVss2mr-ZT3s/edit?gid=774177036#gid=774177036)
 
 ---
 
-**🙆‍♀️ 요구사항 명세서**
+## 🙆‍♀️ 요구사항 명세서
 
 🔗 [요구사항 명세서 바로가기](https://docs.google.com/spreadsheets/d/1LKRA_FTxVP1aXb2mOxQGSUPFLPpw8EjTVss2mr-ZT3s/edit?gid=0#gid=0)
 
 ---
 
-**💭 DDD 설계**
+## 💭 DDD 설계
 
 **1. Domain Event Storming**
 
@@ -181,13 +181,13 @@ AI 이미지 생성 기술을 활용해 체지방 변화 예측 사진과
 
 ---
 
-**🗃️ DB 모델링**
+## 🗃️ DB 모델링
 
 ![](https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/ERD/erdcloud.png)
 
 ---
 
-**🪄 Figma**
+## 🪄 Figma
 
 🔗 [Figma 디자인]
 
@@ -195,13 +195,13 @@ AI 이미지 생성 기술을 활용해 체지방 변화 예측 사진과
 
 ---
 
-**🛜 CI/CD 프로젝트 아키텍처**
+## 🛜 CI/CD 프로젝트 아키텍처
 
 ![](https://github.com/beyond-SW-Camp-14th-clover/be14-4th-clover-moodiary-Dev/raw/main/image/image%20(1).png)
 
 ---
 
-**🚩 젠킨스 파이프라인 파일 스크립트 코드**
+## 🚩 젠킨스 파이프라인 파일 스크립트 코드
 
 ```
 pipeline {
@@ -323,7 +323,7 @@ pipeline {
 ```
 ---
 
-**📱 CI/CD 테스트**
+## 📱 CI/CD 테스트
 
 ## 젠킨스 
 - git hub push 이벤트(webhook)을 통해 소스 자동 빌드
@@ -339,7 +339,7 @@ pipeline {
 
 ---
 
-**😊 개인 회고록**
+## 😊 개인 회고록
 
 **🍪 개인 회고록 - 강형규**
 
