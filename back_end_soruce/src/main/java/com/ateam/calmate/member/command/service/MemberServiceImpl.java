@@ -348,26 +348,36 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public void modifyOfData(RequestModifyDTO modifiedData) {
-        Member member =  memberRepository.findById(modifiedData.getId()).orElse(null);
-        member.setNickname(modifiedData.getNickname());
-        member.setPhone(modifiedData.getPhone());
-        member.setHeight(modifiedData.getHeight());
-        member.setWeight(modifiedData.getWeight());
+    @Transactional
+    public void modifyOfData(RequestModifyDTO modifiedData) throws IllegalArgumentException {
+        try
+        {
+            Member member =  memberRepository.findById(modifiedData.getId()).orElse(null);
+            member.setNickname(modifiedData.getNickname());
+            member.setPhone(modifiedData.getPhone());
+            member.setHeight(modifiedData.getHeight());
+            member.setWeight(modifiedData.getWeight());
+            member.setBodyMetric(modifiedData.getBodyMetric());
+            member.setPhone(modifiedData.getPhone());
+            memberRepository.save(member);
 
-        memberRepository.save(member);
+            MemberGoal memberGoal = goalRepository.findByMemberId(modifiedData.getId());
+            if(memberGoal == null)
+            {
+                memberGoal = new MemberGoal();
+            }
+            memberGoal.setGoalType(modifiedData.getGoalType());
+            memberGoal.setEndDate(modifiedData.getEndDate());
+            memberGoal.setStartDate(LocalDateTime.now());
+            memberGoal.setTargetValue(modifiedData.getTargetValue());
+            memberGoal.setMemberId(modifiedData.getId());
 
-
-//        MemberGoal memberGoal = goalRepository.findByMemberId(modifiedData.getId());
-//
-//        if(memberGoal == null)
-//            memberGoal = modelMapper.map(modifiedData, MemberGoal.class);
-//
-//        memberGoal.setGoalType(modifiedData.getGoalType());
-//        memberGoal.setEndDate(modifiedData.getEndDate());
-
-
-
+            goalRepository.save(memberGoal);
+        }
+        catch (Exception e)
+        {
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
     // 포인트 연산

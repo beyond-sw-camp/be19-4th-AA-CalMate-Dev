@@ -126,7 +126,7 @@ public class MemberController {
         try{
               memberService.modifyOfData(modifiedData);
         } catch (Exception e){
-
+            log.info(e.getMessage());
         } finally {
 
         }

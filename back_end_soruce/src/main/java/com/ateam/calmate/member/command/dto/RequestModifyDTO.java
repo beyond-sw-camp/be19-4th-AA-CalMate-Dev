@@ -1,10 +1,10 @@
 package com.ateam.calmate.member.command.dto;
 
-import com.ateam.calmate.ai.command.dto.GoalType;
+import com.ateam.calmate.member.command.entity.MemberGoal;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -21,7 +21,8 @@ public class RequestModifyDTO {
     private BigDecimal weight;
     private BigDecimal height;
     private int bodyMetric;
-    private GoalType goalType;
-    private LocalDate endDate;
+    private MemberGoal.GoalType goalType;
+    private LocalDateTime endDate;
     private String bmr;
+    private BigDecimal targetValue;
 }
