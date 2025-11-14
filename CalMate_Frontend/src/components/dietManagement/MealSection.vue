@@ -258,120 +258,283 @@ onMounted(() => {
 <style scoped>
 .meal-card {
   border-radius: 16px;
-  border: 1px solid #e4e4ea;
+  border: 1px solid #e9edf4;
+  background: #ffffff;
   padding: 24px;
   min-height: 180px;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.meal-card:hover {
+  box-shadow: 0 8px 24px rgba(108, 92, 231, 0.08);
+  transform: translateY(-2px);
+}
+
 .meal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e9edf4;
 }
+
 .meal-label {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
+  color: #161a1d;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.meal-label::before {
+  content: '🍴';
+  font-size: 18px;
+}
+
 .add-btn {
-  padding: 8px 14px;
+  padding: 9px 16px;
   border-radius: 999px;
   border: none;
-  background-color: #05030d;
+  background: #05030d;
   color: #fff;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+
+.add-btn:hover {
+  background: #1a1825;
+  transform: translateY(-1px);
+}
+
+.add-btn:active {
+  transform: translateY(0);
+}
+
 .meal-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
+
 .meal-body.empty {
   justify-content: center;
   align-items: center;
   flex: 1;
+  padding: 40px 0;
 }
+
 .empty-text {
   font-size: 14px;
   color: #9a9aa0;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
+
+.empty-text::before {
+  content: '🍽️';
+  font-size: 42px;
+  opacity: 0.4;
+}
+
 .food-card {
   border-radius: 12px;
   border: 1px solid #ececf0;
-  padding: 14px 16px;
+  background: #ffffff;
+  padding: 16px 18px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
+
+.food-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: #6c5ce7;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.food-card:hover {
+  border-color: rgba(108, 92, 231, 0.2);
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.08);
+  transform: translateX(3px);
+}
+
+.food-card:hover::before {
+  opacity: 1;
+}
+
 .food-main {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 8px;
 }
+
 .food-top {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
 }
+
 .food-name {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
+  color: #161a1d;
 }
+
 .food-info {
   font-size: 14px;
-  color: #4b4c55;
+  color: #6c5ce7;
+  font-weight: 700;
+  background: #f1f0ff;
+  padding: 4px 10px;
+  border-radius: 6px;
 }
+
 .food-macro {
   font-size: 14px;
-  color: #8f9099;
-  margin-top: 4px;
+  color: #7d8896;
+  margin: 0;
+  font-weight: 500;
 }
+
+.food-macro::before {
+  content: '📊 ';
+  margin-right: 2px;
+}
+
 .food-actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
 }
+
 .food-edit,
 .food-delete {
   width: 36px;
   height: 36px;
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
+
 .food-edit {
   border: 1px solid #d1d5db;
-  background-color: #ffffff;
+  background: #ffffff;
 }
+
+.food-edit:hover {
+  border-color: #6c5ce7;
+  background: #f1f0ff;
+}
+
 .food-edit img {
   width: 18px;
   height: 18px;
 }
+
 .food-delete {
   border: 1px solid #fca5a5;
-  background-color: #ffffff;
+  background: #ffffff;
 }
+
+.food-delete:hover {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
 .food-delete img {
   width: 18px;
   height: 18px;
 }
+
 .food-images {
   display: flex;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e9edf4;
 }
+
 .food-image-wrap {
   width: 110px;
   height: 110px;
-  border-radius: 18px;
+  border-radius: 12px;
   overflow: hidden;
-  background-color: #f3f3f6;
+  background: #f3f3f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
+
+.food-image-wrap:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.12);
+}
+
 .food-image-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.food-image-wrap:hover img {
+  transform: scale(1.08);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .meal-card {
+    padding: 20px;
+  }
+
+  .meal-label {
+    font-size: 16px;
+  }
+
+  .add-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .food-name {
+    font-size: 15px;
+  }
+
+  .food-info {
+    font-size: 13px;
+  }
+
+  .food-macro {
+    font-size: 13px;
+  }
+
+  .food-image-wrap {
+    width: 100px;
+    height: 100px;
+  }
 }
 </style>

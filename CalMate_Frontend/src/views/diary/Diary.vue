@@ -1,14 +1,16 @@
 <template>
   <div class="diary-wrap">
-    <header>
-      <h2 class="title">일기</h2>
-      <p class="sub">오늘의 상태를 기록하세요</p>
+    <header class="header">
+      <div class="title-wrap">
+        <h2>일기</h2>
+        <p class="sub">오늘의 상태를 기록하세요</p>
+      </div>
     </header>
 
     <!-- 입력 카드 -->
     <section class="d-card">
       <div class="date-head">
-        <span class="emoji">📅</span>
+        <Calendar class="date-icon" :size="20" :stroke-width="2.5" />
         {{ todayLabel }}
       </div>
 
@@ -82,7 +84,7 @@
               type="button"
               @click="triggerFileInput"
             >
-              <span class="mr">📷</span>파일에서 선택
+              <Camera class="mr-icon" :size="18" :stroke-width="2.5" />파일에서 선택
             </button>
             <input
               ref="fileInputRef"
@@ -197,6 +199,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from '../../lib/toast.js'
 import { useUserStore } from '@/stores/user'
+import { Calendar, Camera } from 'lucide-vue-next'
 import {
   createDiary,
   updateDiary,
@@ -464,30 +467,44 @@ function formatDate(dateStr) {
 
 <style scoped>
 .diary-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  padding: 24px 32px;
+  background: #ffffff;
+  min-height: 100vh;
 }
-.title {
+
+/* 헤더 영역 */
+.header {
+  margin-bottom: 24px;
+}
+
+.title-wrap h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #0a0a0a;
+}
+
+.title-wrap .sub {
+  font-size: 16px;
+  color: #717182;
   margin: 0;
-  font-size: 22px;
-  font-weight: 800;
-  color: #111827;
-}
-.sub {
-  margin: 4px 0 0;
-  color: #6b7280;
 }
 
 /* 입력 카드 */
 .d-card {
-  background: #fff;
-  border: 1px solid #eef0f4;
-  border-radius: 18px;
-  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e9edf4;
+  border-radius: 16px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.d-card:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
 }
 .date-head {
   font-weight: 700;
@@ -495,8 +512,8 @@ function formatDate(dateStr) {
   align-items: center;
   gap: 8px;
 }
-.emoji {
-  font-size: 18px;
+.date-icon {
+  color: #6c5ce7;
 }
 
 .d-field {
@@ -505,39 +522,42 @@ function formatDate(dateStr) {
   gap: 8px;
 }
 .d-label {
-  font-size: 13px;
-  color: #6b7280;
+  font-size: 14px;
+  color: #7d8896;
+  font-weight: 600;
 }
 .d-input {
   width: 100%;
-  border: 1px solid #e6e8ee;
-  background: #f5f6fa;
-  border-radius: 12px;
+  border: 1px solid #e9edf4;
+  background: #ffffff;
+  border-radius: 10px;
   padding: 12px 14px;
   font-size: 14px;
   box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 .d-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+  border-color: #6c5ce7;
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
   background: #fff;
 }
 .d-textarea {
   width: 100%;
-  border: 1px solid #e6e8ee;
-  background: #f5f6fa;
-  border-radius: 12px;
+  border: 1px solid #e9edf4;
+  background: #ffffff;
+  border-radius: 10px;
   padding: 12px 14px;
   font-size: 14px;
   min-height: 140px;
   resize: vertical;
   box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 .d-textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+  border-color: #6c5ce7;
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
   background: #fff;
 }
 
@@ -553,18 +573,20 @@ function formatDate(dateStr) {
   align-items: center;
   gap: 6px;
   padding: 16px 8px;
-  border: 2px solid #e5e7eb;
-  border-radius: 14px;
+  border: 1px solid #e9edf4;
+  border-radius: 12px;
   background: #fff;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 .d-mood:hover {
-  background: #fafafb;
+  border-color: #6c5ce7;
+  background: rgba(108, 92, 231, 0.05);
 }
 .d-mood.is-active {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25) inset;
-  background: #eff6ff;
+  border-color: #6c5ce7;
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+  background: #f1f0ff;
 }
 .d-mood-emoji {
   font-size: 22px;
@@ -592,18 +614,21 @@ function formatDate(dateStr) {
 }
 .d-btn-ghost {
   background: #fff;
-  border: 1px solid #e6e8ee;
-  color: #111827;
+  border: 1px solid #e9edf4;
+  color: #161a1d;
   padding: 10px 14px;
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 600;
+  transition: all 0.2s ease;
 }
 .d-btn-ghost:hover {
-  background: #f3f4f8;
+  border-color: #6c5ce7;
+  background: rgba(108, 92, 231, 0.05);
 }
-.mr {
+.mr-icon {
   margin-right: 6px;
+  color: #6c5ce7;
 }
 .hidden {
   display: none;
@@ -644,25 +669,36 @@ function formatDate(dateStr) {
 
 /* 저장 버튼 */
 .d-btn-primary {
-  background: #0b0b2b;
+  background: #05030d;
   color: #fff;
-  border: 0;
-  padding: 12px 16px;
-  border-radius: 999px;
-  font-weight: 800;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 15px;
 }
 .d-btn-primary:hover {
-  background: #11113a;
+  background: #1a1825;
+  transform: translateY(-1px);
+}
+.d-btn-primary:active {
+  transform: translateY(0);
 }
 
 /* 오늘 쓴 일기 카드 */
 .today-card {
-  margin-top: 8px;
-  background: #fff;
-  border: 1px solid #eef0f4;
-  border-radius: 18px;
-  padding: 16px;
+  margin-top: 24px;
+  background: #ffffff;
+  border: 1px solid #e9edf4;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.today-card:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
 }
 .today-head h3 {
   margin: 0 0 10px;
@@ -714,6 +750,20 @@ function formatDate(dateStr) {
 @media (max-width: 920px) {
   .d-mood-row {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .diary-wrap {
+    padding: 16px;
+  }
+
+  .d-card {
+    padding: 20px;
+  }
+
+  .today-card {
+    padding: 20px;
   }
 }
 </style>

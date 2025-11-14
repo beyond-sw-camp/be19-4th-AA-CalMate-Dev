@@ -1,8 +1,10 @@
 <template>
   <div class="cal-wrap">
-    <header class="page-head">
-      <h2 class="page-title">활동 캘린더</h2>
-      <p class="page-sub">날짜별 식단, 운동, 일기 기록을 확인하세요</p>
+    <header class="header">
+      <div class="title-wrap">
+        <h2>활동 캘린더</h2>
+        <p class="sub">날짜별 식단, 운동, 일기 기록을 확인하세요</p>
+      </div>
     </header>
 
     <div class="cols">

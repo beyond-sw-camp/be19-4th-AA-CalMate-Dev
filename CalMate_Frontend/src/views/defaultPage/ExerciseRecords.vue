@@ -13,29 +13,36 @@
       </button>
     </div>
 
-    <div class="summary-section">
-      <ExerciseSummaryCard
-        :icon="blueIcon"
-        label="총 운동 시간"
-        :value="totalMinutes"
-        unit="분"
-        colorClass="blue"
-      />
-      <ExerciseSummaryCard
-        :icon="orangeIcon"
-        label="소모 칼로리"
-        :value="totalKcal"
-        unit="kcal"
-        colorClass="orange"
-      />
-      <ExerciseSummaryCard
-        :icon="greenIcon"
-        label="운동 횟수"
-        :value="totalCount"
-        unit="회"
-        colorClass="green"
-      />
-    </div>
+    <!-- 영양소 요약 카드 -->
+    <section class="nutrition-summary">
+      <div class="nutrition-card">
+        <div class="nutrition-icon">
+          <Clock :size="28" :stroke-width="2.5" />
+        </div>
+        <div class="nutrition-info">
+          <div class="nutrition-label">총 운동 시간</div>
+          <div class="nutrition-value">{{ totalMinutes }}분</div>
+        </div>
+      </div>
+      <div class="nutrition-card">
+        <div class="nutrition-icon">
+          <Flame :size="28" :stroke-width="2.5" />
+        </div>
+        <div class="nutrition-info">
+          <div class="nutrition-label">소모 칼로리</div>
+          <div class="nutrition-value">{{ totalKcal }}</div>
+        </div>
+      </div>
+      <div class="nutrition-card">
+        <div class="nutrition-icon">
+          <Dumbbell :size="28" :stroke-width="2.5" />
+        </div>
+        <div class="nutrition-info">
+          <div class="nutrition-label">운동 횟수</div>
+          <div class="nutrition-value">{{ totalCount }}회</div>
+        </div>
+      </div>
+    </section>
 
     <ExerciseTodayList
       :records="records"
@@ -68,14 +75,11 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import api from '@/lib/api'
+import { Clock, Flame, Dumbbell } from 'lucide-vue-next'
 
-import ExerciseSummaryCard from '@/components/exerciseRecords/ExerciseSummaryCard.vue'
 import ExerciseTodayList from '@/components/exerciseRecords/ExerciseTodayList.vue'
 import ExerciseRecordModal from '@/components/exerciseRecords/ExerciseRecordModal.vue'
 
-import blueIcon from '@/assets/images/exerciseRecords/bruedumbel.png'
-import orangeIcon from '@/assets/images/exerciseRecords/orangedumbel.png'
-import greenIcon from '@/assets/images/exerciseRecords/greendumbel.png'
 import plusIcon from '@/assets/images/exerciseRecords/plus.png'
 
 import {
@@ -293,10 +297,96 @@ const totalCount = computed(() => records.value.length)
   width: 16px;
   height: 16px;
 }
-.summary-section {
-  display: flex;
+/* 영양소 요약 카드 */
+.nutrition-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 16px;
+}
+
+.nutrition-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #e9edf4;
+}
+
+.nutrition-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+}
+
+.nutrition-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nutrition-card:nth-child(1) .nutrition-icon {
+  background: #dbeafe;
+  color: #3b82f6;
+}
+
+.nutrition-card:nth-child(2) .nutrition-icon {
+  background: #ffe9d6;
+  color: #ea580c;
+}
+
+.nutrition-card:nth-child(3) .nutrition-icon {
+  background: #f5ecff;
+  color: #a855f7;
+}
+
+.nutrition-info {
+  flex: 1;
+}
+
+.nutrition-label {
+  font-size: 12px;
+  color: #7d8896;
+  font-weight: 600;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nutrition-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #161a1d;
+  line-height: 1;
+}
+
+/* 반응형 */
+@media (max-width: 1024px) {
+  .nutrition-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .exercise-records {
+    padding: 16px;
+  }
+
+  .nutrition-summary {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .nutrition-card {
+    padding: 16px;
+  }
+
 }
 
 /* ✅ 포인트 모달 */
