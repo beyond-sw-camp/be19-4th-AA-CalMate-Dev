@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fourth-project-ai
+  labels:
+    app: fourth-project-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fourth-project-ai
+  template:
+    metadata:
+      labels:
+        app: fourth-project-ai
+    spec:
+      containers:
+        - name: fourth-project-ai
+          image: seoguhoe2/4thprojectai:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openai-secret
+                  key: OPENAI_API_KEY
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fourth-project-ai-service
+spec:
+  selector:
+    app: fourth-project-ai
+  type: NodePort
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000        # 클러스터 내부 포트
+      targetPort: 8000  # 컨테이너 포트
+      nodePort: 30080   # 노드(호스트)에서 열릴 포트
