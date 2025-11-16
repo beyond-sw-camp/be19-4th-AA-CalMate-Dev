@@ -1,0 +1,53 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cal-mate-ingress-db
+  annotations:
+    # 기본적으로 NGINX Ingress 컨트롤러는 모든 HTTP 트래픽을 HTTPS로 리다이렉트한다.
+    # 이 설정을 "false"로 지정하면 HTTP 요청을 HTTPS로 자동 리다이렉트 하지 않는다.
+    # 개발 환경이나 SSL/TLS가 필요 없는 상황에서 유용하다.
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # 매칭된 경로에서 /boot 부분을 제거하고 나머지 부분만 백엔드 서비스로 전달한다.
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # 🔥 업로드 용량 상한 (예: 20MB)
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  # 사용할 Ingress 컨트롤러의 클래스를 지정. 여기서는 NGINX Ingress 컨트롤러를 사용하도록 설정
+  ingressClassName: nginx  
+  rules:
+  - http:
+      paths:
+      - path: /()(.*)
+        # rewriter와 관련된 사이트 주소: https://kubernetes.github.io/ingress-nginx/examples/rewrite/
+        # ImplementationSpecific은 Ingress 컨트롤러의 구현에 따라 경로 매칭 방식이 결정된다.
+        # NGINX Ingress Controller의 경우, 정규 표현식을 포함한 더 유연한 라우팅 규칙을 적용할 수 있다.
+        # 이는 Prefix나 Exact보다 더 복잡한 경로 매칭을 가능하게 한다.
+        # 예: /, /about, /users 등
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: cal-mate-front-ser
+            port: 
+              number: 8002
+      - path: /back(/|$)(.*)
+        # 여기서도 ImplementationSpecific을 사용하여 /boot로 시작하는 모든 경로를 매칭한다.
+        # (/|$)는 /boot 다음에 /가 오거나 문자열이 끝나는 경우를 모두 포함한다.
+        # (.*)는 그 뒤의 모든 문자열을 캡처한다.
+        # 예: /boot, /boot/, /boot/plus, /boot/users 등
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: cal-mate-back-ser
+            port: 
+              number: 8001
+      - path: /recommend(/|$)(.*)
+              # 여기서도 ImplementationSpecific을 사용하여 /boot로 시작하는 모든 경로를 매칭한다.
+              # (/|$)는 /boot 다음에 /가 오거나 문자열이 끝나는 경우를 모두 포함한다.
+              # (.*)는 그 뒤의 모든 문자열을 캡처한다.
+              # 예: /boot, /boot/, /boot/plus, /boot/users 등
+        pathType: ImplementationSpecific
+        backend:
+          service: 
+            name: fourth-project-ai-service
+            port: 
+              number: 8000

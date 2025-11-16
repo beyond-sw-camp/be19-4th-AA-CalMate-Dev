@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fourth-project-ai
+  labels:
+    app: fourth-project-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fourth-project-ai
+  template:
+    metadata:
+      labels:
+        app: fourth-project-ai
+    spec:
+      containers:
+        - name: fourth-project-ai
+          image: seoguhoe2/4thprojectai:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openai-secret
+                  key: OPENAI_API_KEY
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"

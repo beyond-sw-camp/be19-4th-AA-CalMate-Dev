@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cal-mate-back-dep
+spec:
+  selector:
+    matchLabels:
+      app: cal-mate-back-kube
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cal-mate-back-kube
+    spec:
+      containers:
+      - name: boot-container
+        image: kang92/cal_mate_back:81
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8081
+        env:
+        # Spring Boot??application.yml???��? mariadb-persist�??�스?�로 ?�용?�도�??�정?�어 ?�으므�?
+        # Kubernetes?�서???�비?�명(mariadb003ser)???�용?�도�??�경변?�로 ?�정?�합?�다.
+        - name: SPRING-DATASOURCE-URL
+          value: "jdbc:mariadb://cal-mate-mariadb-ser:3310/calcdb"
+        - name: SPRING-DATASOURCE-USERNAME
+          value: "cal-mate"
+        - name: SPRING-DATASOURCE-PASSWORD
+          value: "cal123123"
+
+        # ?�기부??추�?
+        volumeMounts:
+        - name: backend-storage
+          mountPath: /app/uploads
+          subPath: uploads
+        - name: backend-storage
+          mountPath: /app/img
+          subPath: img
+
+        # 컨테?�너가 ?�래?�을 받을 준비�? ?�었?��? ?�인
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        # 컨테?�너가 ?�상?�으�??�행 중인지 ?�인
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+      # volumes 블록 추�?
+      volumes:
+      - name: backend-storage
+        persistentVolumeClaim:
+          claimName: backend-data-pvc
+
