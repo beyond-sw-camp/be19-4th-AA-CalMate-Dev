@@ -202,7 +202,7 @@ AI 이미지 생성 기술을 활용해 체지방 변화 예측 사진과
 
 ## 🛜 CI/CD 프로젝트 아키텍처
 
-![](img/CICD/Architecture.png)
+![](https://github.com/Cal-Mate/be19-4th-Cal-Mate-Dev/blob/main/img/CICD/Architecture.png)
 
 ---
 
@@ -621,6 +621,7 @@ pipeline {
 - 파일 업로드 · WebSocket · 인증 구조 같은 공통 기능을 모듈화
     - 이번에는 기능별로 개별 구현하다 보니 중복이 생겼다.
       다음에는 이런 부분을 공용 모듈로 묶어서 재사용 가능한 구조로 개선하고 싶다.
+
 
 
 
